@@ -1,0 +1,27 @@
+[package]
+name = "kat"
+description = "A command line tool for interacting with the problem solving website Kattis."
+authors = ["Viggo Gascou"]
+readme = "README.md"
+repository = "https://github.com/viggo-gascou/kat"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.4.11", features = ["derive"] }
+color-eyre = { version = "0.6.2", default-features = false }
+config = { version = "0.13.4", features = ["toml", "ini"] }
+dirs = "5.0.1"
+regex = "1.10.2"
+reqwest = { version = "0.11.23", features = ["cookies", "multipart"] }
+secrecy = { version = "0.8.0", features = ["serde"] }
+serde = { version = "1.0.193", features = ["derive"] }
+tempfile = "3.8.1"
+tokio = { version = "1.35.1", features = ["full"] }
+webbrowser = "0.8.12"
+zip = "0.6.6"
+
+[dev-dependencies]
+color-eyre = "0.6.2"

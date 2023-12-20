@@ -1,0 +1,45 @@
+# This is a sample configuration file for kat.
+# It specifies the commands to compile and execute programs in different languages,
+# as well as the file extensions associated with each language.
+# You can use this file as a starting point for your own configuration file,
+# so feel free to modify or add to it as you see fit :).
+
+[default]
+# The default language to use if none is specified.
+language = "python"
+
+[languages]
+# To add a new language, create a new section with the format [languages.<language_name>].
+# Each language section should have the following members:
+# - compile_command (optional): The command to compile a program in this language. Not all languages need this for example Python.
+# - execute_command: The command to execute a program in this language.
+# - extensions: The file extensions associated with this language. This should be a list of strings.
+# The commands can use the following variables:
+# - {source_file}: The name of the source file. 
+# - {source_file_no_ext}: The name of the source file without its extension. This can be used with for example Java, where the source file name and the class name must be the same.
+# - {executable_path}: The path to the executable file, including the output directory and the executable file name. 
+# - {output_directory}: The directory where the compiled files should be placed. This can be used if for example the compiler generates multiple (auxiliary) files.
+
+[languages.python]
+execute_command = "python {source_file}"
+extensions = ["py"]
+
+[languages.java]
+compile_command = "javac {source_file}"
+execute_command = "java {source_file_no_ext}"
+extensions = ["java"]
+
+[languages.c]
+compile_command = "gcc -o {executable_path} {source_file}"
+execute_command = "{executable_path}"
+extensions = ["c"]
+
+[languages.cpp]
+compile_command = "g++ -o {executable_path} {source_file}"
+execute_command = "{executable_path}"
+extensions = ["cpp"]
+
+[languages.rust]
+compile_command = "rustc --out-dir {output_directory} {source_file}"
+execute_command = "{executable_path}"
+extensions = ["rs"]
