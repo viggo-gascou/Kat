@@ -49,7 +49,7 @@ pub enum Commands {
 #[derive(Args, Debug)]
 pub struct Config {
     #[command(subcommand)]
-    pub subcommand: Option<ConfigCommands>,
+    pub subcommand: ConfigCommands,
 }
 
 #[derive(Subcommand, Debug)]
@@ -58,14 +58,14 @@ pub enum ConfigCommands {
     Init,
     #[command(about = "Locate the configuration files.")]
     Locate,
-    #[command(about = "Print the value of a configuration option.")]
-    Get(GetConfig),
+    #[command(about = "Set the location of where the configuration files are stored.")]
+    Set(SetLocation),
 }
 
 #[derive(Args, Debug)]
-pub struct GetConfig {
-    #[arg(short, long, help = "The name of the configuration option to print.")]
-    pub get: String,
+pub struct SetLocation {
+    #[arg(help = "The new location for the configuration files.")]
+    pub path: String,
 }
 
 #[derive(Args, Debug)]

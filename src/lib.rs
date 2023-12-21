@@ -23,7 +23,7 @@ pub async fn run(args: cli::Cli) {
 async fn attempt_run(args: cli::Cli) -> crate::Result<()>{ 
     use cli::Commands::*;
 
-    let config = utils::config::Config::new()?;
+    let config = utils::config::Config::load()?;
     let http_client = utils::webutils::HttpClient::new().unwrap();
 
     let app = App { args, config, http_client };
