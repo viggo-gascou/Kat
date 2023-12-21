@@ -63,7 +63,7 @@ impl InternalConfig {
     pub fn set_location(&mut self, path: String) -> Result<String, Report> {
         let path = PathBuf::from(shellexpand::full(&path).unwrap().to_string());
         if !path.is_dir() {
-            eyre::bail!("The provided path, {}, is not a directory", path.display());
+            eyre::bail!("🙀 The provided path, {}, is not a directory", path.display());
         }
 
         self.config_location = path
