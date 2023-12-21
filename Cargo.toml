@@ -15,11 +15,13 @@ color-eyre = { version = "0.6.2", default-features = false }
 config = { version = "0.13.4", features = ["toml", "ini"] }
 dirs = "5.0.1"
 regex = "1.10.2"
-reqwest = { version = "0.11.23", features = ["cookies", "multipart"] }
+reqwest = { version = "0.11.23", features = ["cookies", "multipart", "blocking"] }
 secrecy = { version = "0.8.0", features = ["serde"] }
 serde = { version = "1.0.193", features = ["derive"] }
+shellexpand = "3.1.0"
 tempfile = "3.8.1"
 tokio = { version = "1.35.1", features = ["full"] }
+toml = "0.8.8"
 webbrowser = "0.8.12"
 zip = "0.6.6"
 
