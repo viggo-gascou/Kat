@@ -1,29 +1,27 @@
-use std::{path::PathBuf, fs};
+use std::{fs, path::PathBuf};
 
 use crate::{
-    App,
-	cli::{Config, ConfigCommands}, 
+    cli::{Config, ConfigCommands},
     utils::config::InternalConfig,
+    App,
 };
 
-use color_eyre::{eyre, eyre::{Context, ContextCompat}, Report};
-
+use color_eyre::{eyre::Context, Report};
 
 pub async fn config(app: &App, args: &Config) -> Result<(), Report> {
     match &args.subcommand {
-        ConfigCommands::Init => {
-            init_config(app).await.wrap_err("🙀 Failed to initialise config")
-        }
+        ConfigCommands::Init => init_config(app)
+            .await
+            .wrap_err("🙀 Failed to initialise config"),
         ConfigCommands::Locate => {
             get_config_location(app).wrap_err("🙀 Failed to load config location")
         }
-        ConfigCommands::Set(set_args) => {
-            set_config_location(app, set_args.path.clone()).wrap_err("🙀 Failed to set config location")
-        }
+        ConfigCommands::Set(set_args) => set_config_location(app, set_args.path.clone())
+            .wrap_err("🙀 Failed to set config location"),
     }
 }
 
-async fn init_config(app: &App) -> Result<(), Report> {
+async fn init_config(_app: &App) -> Result<(), Report> {
     // initialise the config directory
     let internal_config = InternalConfig::new()?;
     let config_location = internal_config.config_location;
@@ -36,7 +34,8 @@ async fn init_config(app: &App) -> Result<(), Report> {
     // Check if the config file exists
     if !config_file_path.exists() {
         // If the config file doesn't exist, download the sample config
-        let sample_config_url = "https://github.com/viggo-gascou/kat/raw/main/templates/config.toml";
+        let sample_config_url =
+            "https://github.com/viggo-gascou/kat/raw/main/templates/config.toml";
         // blocking request
         let sample_config = reqwest::blocking::get(sample_config_url)
             .wrap_err("🙀 Failed to download sample config file")?
@@ -51,7 +50,7 @@ async fn init_config(app: &App) -> Result<(), Report> {
     Ok(())
 }
 
-fn get_config_location(app: &App) -> Result<(), Report> {
+fn get_config_location(_app: &App) -> Result<(), Report> {
     let internal_config = InternalConfig::new()?;
     let config_location = internal_config.config_location;
 
@@ -60,7 +59,10 @@ fn get_config_location(app: &App) -> Result<(), Report> {
     let kattisrc_location = config_dir.join("kattisrc");
     let templates_location = config_dir.join("templates");
 
-    println!("\nYour config directory is located at: {}", config_dir.display());
+    println!(
+        "\nYour config directory is located at: {}",
+        config_dir.display()
+    );
     println!("Meaning that your config files are located at:\n");
     println!("\t- Config location: {}", config_location.display());
     println!("\t- Kattisrc location: {}", kattisrc_location.display());
@@ -79,8 +81,12 @@ fn set_config_location(app: &App, path: String) -> Result<(), Report> {
     fs::create_dir_all(&config_dir).wrap_err("🙀 Failed to create config directory")?;
 
     internal_config.set_location(path)?;
-    
-    println!("😸 Successfully set the config directory from {} to {}", old_config_dir.display(), config_dir.display());
+
+    println!(
+        "😸 Successfully set the config directory from {} to {}",
+        old_config_dir.display(),
+        config_dir.display()
+    );
 
     Ok(())
 }
