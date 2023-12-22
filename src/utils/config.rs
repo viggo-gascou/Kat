@@ -141,24 +141,22 @@ impl Kattisrc {
 }
 
 #[derive(Debug, Deserialize)]
-struct Language {
-    compile_command: Option<String>,
-    execute_command: String,
-    extensions: Vec<String>,
+pub struct Language {
+    pub compile_command: Option<String>,
+    pub execute_command: String,
+    pub extensions: Vec<String>,
+    pub template: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct Languages(HashMap<String, Language>);
-
-#[derive(Debug, Deserialize)]
-struct Default {
-    language: String,
+pub struct Default {
+    pub language: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct KatConfig {
-    default: Default,
-    languages: Languages,
+    pub default: Default,
+    pub languages: HashMap<String, Language>,
 }
 
 impl KatConfig {

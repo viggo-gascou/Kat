@@ -72,7 +72,7 @@ pub struct SetLocation {
 pub struct Get {
     #[arg(help = "The id of the problem you want to download from kattis. 
 		If you don't know the id, you can find it from the url of the problem, i.e. https://open.kattis.com/problems/<PROBLEM_ID>")]
-    problem: String,
+    pub problem: String,
     #[arg(
         short,
         long,
