@@ -1,6 +1,6 @@
 import java.util.Scanner;
 
-public class {{ProblemName}} {
+public class {source_file_no_ext} {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         while (sc.hasNextLong()) {

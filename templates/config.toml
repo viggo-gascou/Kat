@@ -14,10 +14,10 @@ language = "python"
 # - compile_command (optional): The command to compile a program in this language. Not all languages need this for example Python.
 # - execute_command: The command to execute a program in this language.
 # - extensions: The file extensions associated with this language. This should be a list of strings.
-# - template (optional): The filename of the template file you want to use when getting a problem from kattis.
+# - template (optional): The filename of the template file you want to use when getting a problem from kattis - the variables below can also be used in the template file itself.
 # The commands can use the following variables:
 # - {source_file}: The name of the source file. 
-# - {source_file_no_ext}: The name of the source file without its extension. This can be used with for example Java, where the source file name and the class name must be the same.
+# - {source_file_no_ext}: The name of the source file without its extension. This can for example be used with Java where main class name must match the filename.
 # - {executable_path}: The path to the executable file, including the output directory and the executable file name. 
 # - {output_directory}: The directory where the compiled files should be placed. This can be used if for example the compiler generates multiple (auxiliary) files.
 

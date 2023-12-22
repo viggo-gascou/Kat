@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::{path::{Path, PathBuf}, fs};
 
 use color_eyre::{
     eyre,
@@ -21,7 +21,7 @@ pub fn get_test_dir(app: &App, problem: &str) -> Result<PathBuf, Report> {
     Ok(test_dir)
 }
 
-pub fn copy_template(app: &App, args: &Get, problem: &str) -> Result<(), Report> {
+pub fn copy_template(app: &App, args: &Get, mut problem: &str) -> Result<(), Report> {
     let problem_dir = get_problem_dir(app, problem)?;
     let template_dir = PathBuf::from(format!(
         "{}/templates",
@@ -77,11 +77,20 @@ pub fn copy_template(app: &App, args: &Get, problem: &str) -> Result<(), Report>
             .to_str()
             .wrap_err("🙀 Failed to convert file name to string")?
             .to_string();
+        
+        // strip the subdomain from the problem id
+        if problem.contains(".") {
+            problem = problem.split(".").nth(1).unwrap();
+        }
         let problem_file_name = template_file_name.replace(&template_file_no_ext, problem);
         let problem_file_path = problem_dir.join(problem_file_name);
 
-        std::fs::copy(template_path, problem_file_path)
-            .wrap_err("🙀 Failed to copy template file")?;
+        let template_file = fs::read_to_string(&template_path)
+            .wrap_err("🙀 Failed to open template file for reading")?
+            .replace("{source_file_no_ext}", &problem);
+
+        fs::write(problem_file_path, template_file)
+        .wrap_err("🙀 Failed to create template file in problem directory")?;
     }
 
     Ok(())
