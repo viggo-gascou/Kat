@@ -28,7 +28,10 @@ pub fn get_submission_url(submission_id: &str) -> String {
 
 pub fn get_sample_url(problem: &str) -> String {
     let host_name = Config::load().unwrap().kattisrc.kattis.hostname;
-    format!("https://{}/problems/{}/file/statement/samples.zip", host_name, problem)
+    format!(
+        "https://{}/problems/{}/file/statement/samples.zip",
+        host_name, problem
+    )
 }
 
 pub async fn problem_exists(app: &App, problem: &str, hostname: &str) -> Result<bool, Report> {
