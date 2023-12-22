@@ -14,6 +14,7 @@ language = "python"
 # - compile_command (optional): The command to compile a program in this language. Not all languages need this for example Python.
 # - execute_command: The command to execute a program in this language.
 # - extensions: The file extensions associated with this language. This should be a list of strings.
+# - template (optional): The filename of the template file you want to use when getting a problem from kattis.
 # The commands can use the following variables:
 # - {source_file}: The name of the source file. 
 # - {source_file_no_ext}: The name of the source file without its extension. This can be used with for example Java, where the source file name and the class name must be the same.
@@ -23,23 +24,28 @@ language = "python"
 [languages.python]
 execute_command = "python {source_file}"
 extensions = ["py"]
+template = "template.py"
 
 [languages.java]
-compile_command = "javac {source_file}"
-execute_command = "java {source_file_no_ext}"
+compile_command = "javac -encoding UTF-8 -sourcepath {output_directory} -cp {output_directory}/* -d {output_directory} {source_file}"
+execute_command = "java -cp {output_directory} {source_file_no_ext}"
 extensions = ["java"]
+template = "template.java"
 
 [languages.c]
-compile_command = "gcc -o {executable_path} {source_file}"
+compile_command = "gcc -g -O2 -std=gnu11 -static -o {executable_path} {source_file} -lm"
 execute_command = "{executable_path}"
 extensions = ["c"]
+template = "template.c"
 
 [languages.cpp]
-compile_command = "g++ -o {executable_path} {source_file}"
+compile_command = "g++ -g -O2 -std=gnu++17 -static -o {executable_path} -lrt -Wl,--whole-archive -lpthread -Wl,--no-whole-archive {source_file}"
 execute_command = "{executable_path}"
 extensions = ["cpp"]
+template = "template.cpp"
 
 [languages.rust]
-compile_command = "rustc --out-dir {output_directory} {source_file}"
+compile_command = "rustc -o {executable_path} -O --crate-type bin --edition=2018 {source_file}"
 execute_command = "{executable_path}"
 extensions = ["rs"]
+template = "template.rs"
