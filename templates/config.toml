@@ -17,7 +17,7 @@ language = "python"
 # - template (optional): The filename of the template file you want to use when getting a problem from kattis - the variables below can also be used in the template file itself.
 # The commands can use the following variables:
 # - {source_file}: The name of the source file. 
-# - {source_file_no_ext}: The name of the source file without its extension. This can for example be used with Java where main class name must match the filename.
+# - {source_file_no_ext}: The name of the source file without its extension. This can for example be used with Java where the public class name must match the filename.
 # - {executable_path}: The path to the executable file, including the output directory and the executable file name. 
 # - {output_directory}: The directory where the compiled files should be placed. This can be used if for example the compiler generates multiple (auxiliary) files.
 
