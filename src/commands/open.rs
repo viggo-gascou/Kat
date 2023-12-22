@@ -1,13 +1,16 @@
 use crate::{
     cli::Open,
-    utils::webutils::{get_problem_url, is_problem_id},
+    utils::{
+        get_problem_url_from_hostname,
+        webutils::{check_change_hostname, is_problem_id},
+    },
     App,
 };
 use color_eyre::{eyre, eyre::Context, Report};
 
 use std::env;
 
-pub async fn open(_app: &App, args: &Open) -> Result<(), Report> {
+pub async fn open(app: &App, args: &Open) -> Result<(), Report> {
     // first get the problem id from the current directory if it is not specified
     let problem_id = args.problem.as_ref().map_or_else(
         || -> Result<String, Report> {
@@ -28,7 +31,9 @@ pub async fn open(_app: &App, args: &Open) -> Result<(), Report> {
         }
     }
 
-    let problem_url = get_problem_url(&problem_id);
+    let hostname = check_change_hostname(app, &problem_id)?;
+    let problem_url = get_problem_url_from_hostname(&problem_id, &hostname);
+
     webbrowser::open(&problem_url)?;
 
     Ok(())
