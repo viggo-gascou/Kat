@@ -58,9 +58,9 @@ async fn attempt_run(args: cli::Cli) -> crate::Result<()>{
 fn exit_on_err(res: crate::Result<()>, verbose: bool) {
     if let Err(e) = res {
         if verbose {
-            eprintln!("{}: {e:?}", "Error");
+            eprintln!("Error: {e:?}");
         } else {
-            eprintln!("{}: {e}", "Error");
+            eprintln!("Error: {e}");
             eprintln!();
             eprintln!("Run with --verbose for more information");
         }
