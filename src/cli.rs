@@ -71,20 +71,20 @@ pub struct SetLocation {
 #[derive(Args, Debug)]
 pub struct Get {
     #[arg(help = "The id of the problem you want to download from kattis. 
-		If you don't know the id, you can find it from the url of the problem, i.e. https://open.kattis.com/problems/<PROBLEM_ID>")]
+		            If you don't know the id, you can find it from the url of the problem, i.e. https://open.kattis.com/problems/<PROBLEM_ID>")]
     pub problem: String,
     #[arg(
         short,
         long,
         help = "The path where you want to download the problem. 
-								If not specified, the problem will be downloaded to the current directory."
+				If not specified, the problem will be downloaded to the current directory."
     )]
     pub path: Option<PathBuf>,
     #[arg(
         short,
         long,
         help = "The programming language to setup the problem for.
-								If not specified, the language will be determined default language in the configuration file."
+				If not specified, the language will be determined default language in the configuration file."
     )]
     pub language: Option<String>,
 }
@@ -106,9 +106,32 @@ pub struct Submit {
         short,
         long,
         help = "The path of the solution file to submit. 
-				If not specified, the first file with the same name as the problem in the problem folder will be used."
+                If not specified, the first file with the same name as the problem in the problem folder will be used.
+                If multiple files with the correct extension are found, you will be prompted to choose which one to use."
     )]
-    pub file: Option<PathBuf>,
+    pub problem: Option<PathBuf>,
+    #[arg(
+        short,
+        long,
+        help = "The programming language to test the problem against. 
+                This can be used to override the default language set in the configuration file."
+    )]
+    pub language: Option<String>,
+    #[arg(
+        short,
+        long,
+        default_value_t = false,
+        help = "If set, the the problem will be run against the test cases on the kattis server before submitting.
+                If the problem fails any of the test cases, the submission will be aborted."
+    )]
+    pub test_first: bool,
+    #[arg(
+        short,
+        long,
+        default_value_t = false,
+        help = "If set, you will not be prompted to confirm the submission before it is sent to kattis."
+    )]
+    pub yes: bool,
     #[arg(
         short,
         long,
@@ -122,7 +145,7 @@ pub struct Submit {
 pub struct Test {
     #[arg(
         default_value = ".",
-        help = "The path of the problem (folder) you want to test."
+        help = "The path of the problem (folder) you want to test. By default, the current directory is used."
     )]
     pub path: PathBuf,
     #[arg(
@@ -140,6 +163,13 @@ pub struct Test {
 				If not specified, all test cases will be tested, e.g. '1', '1-3', or '1,3-5'."
     )]
     pub test_cases: Option<String>,
+    #[arg(
+        short,
+        long,
+        help = "The programming language to test the problem against. 
+                This can be used to override the default language set in the configuration file."
+    )]
+    pub language: Option<String>,
     #[arg(
         short,
         long,
