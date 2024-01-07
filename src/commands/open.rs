@@ -1,9 +1,6 @@
 use crate::{
     cli::Open,
-    utils::{
-        get_problem_url_from_hostname,
-        webutils::{check_change_hostname, is_problem_id},
-    },
+    utils::webutils::{check_change_hostname, is_problem_id},
     App,
 };
 use color_eyre::{eyre, eyre::Context, Report};
@@ -31,10 +28,9 @@ pub async fn open(app: &App, args: &Open) -> Result<(), Report> {
         }
     }
 
-    let hostname = check_change_hostname(app, &problem_id)?;
-    let problem_url = get_problem_url_from_hostname(&problem_id, &hostname);
+    let problem_url = check_change_hostname(app, &problem_id, "get")?;
 
-    webbrowser::open(&problem_url)?;
+    webbrowser::open(&problem_url).wrap_err(format!("🌐 Website {} could not be opened!", problem_url))?;
 
     Ok(())
 }
