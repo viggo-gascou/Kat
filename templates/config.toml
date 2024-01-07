@@ -5,11 +5,13 @@
 # so feel free to modify or add to it as you see fit :).
 
 [default]
-# The default language to use if none is specified.
-language = "python"
+# The default language to use if none is specified when running the cli.
+language = "python 3"
 
 [languages]
 # To add a new language, create a new section with the format [languages.<language_name>].
+# The language name can be anything you want, but it should be unique.
+# For python particularly the version number should be included with a space.
 # Each language section should have the following members:
 # - compile_command (optional): The command to compile a program in this language. Not all languages need this for example Python.
 # - execute_command: The command to execute a program in this language.
@@ -21,7 +23,7 @@ language = "python"
 # - {executable_path}: The path to the executable file, including the output directory and the executable file name. 
 # - {output_directory}: The directory where the compiled files should be placed. This can be used if for example the compiler generates multiple (auxiliary) files.
 
-[languages.python]
+[languages."python 3"]
 execute_command = "python {source_file}"
 extensions = ["py"]
 template = "template.py"
