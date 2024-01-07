@@ -2,7 +2,8 @@ use crate::{
     cli::Get,
     utils::fileutils::{copy_template, get_problem_dir, get_test_dir},
     utils::webutils::{
-        check_change_hostname, get_problem_url_from_hostname, is_problem_id, problem_exists,
+        check_change_hostname, get_sample_url_from_problem_url,
+        is_problem_id, problem_exists,
     },
     App,
 };
@@ -17,6 +18,16 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
     if !is_problem_id(problem) {
         eyre::bail!("🙀 Invalid problem id: {}!", problem);
     }
+    let url = check_change_hostname(app, problem, "get")?;
+    let hostname = url
+        .trim_start_matches("https://")
+        .split('/')
+        .next()
+        .ok_or_else(|| eyre::eyre!("🙀 Failed to extract hostname from URL"))?;
+
+    if !problem_exists(app, problem, hostname).await? {
+        eyre::bail!("🙀 Problem {} does not exist!", problem);
+    }
 
     let problem_dir = get_problem_dir(app, problem)?;
     if problem_dir.exists() {
@@ -24,19 +35,31 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
             "👀 Looks like the problem {} has already been fetched!",
             problem
         );
-        return Ok(());
+        let overwrite = dialoguer::Confirm::new()
+            .with_prompt("Do you want to get it again? (Careful this will overwrite the existing problem directory!)")
+            .interact()
+            .wrap_err("🙀 Failed to get user input")?;
+        if overwrite {
+            std::fs::remove_dir_all(&problem_dir)
+                .wrap_err("🙀 Failed to remove existing problem directory")?;
+            std::fs::create_dir(&problem_dir)
+                .wrap_err("🙀 Failed to create problem directory at this location")?;
+        } else {
+            println!("{}", &problem_dir.display());
+            println!("👍 Ok, not fetching the problem {problem}!");
+            return Ok(());
+        }
     } else {
         std::fs::create_dir(&problem_dir)
             .wrap_err("🙀 Failed to create problem directory at this location")?;
     }
 
-    let hostname = check_change_hostname(app, problem)?;
 
-    if !problem_exists(app, problem, &hostname).await? {
-        eyre::bail!("🙀 Problem {} does not exist!", problem);
-    }
+    println!("📥 Fetching problem {} from {}...", problem, url);
 
-    fetch_tests(app, problem, &hostname).await?;
+    fetch_tests(app, problem, &url).await?;
+
+    println!("📝 Creating template file for problem {}...", problem);
 
     copy_template(app, args, problem)?;
 
@@ -45,9 +68,8 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
     Ok(())
 }
 
-async fn fetch_tests(app: &App, problem: &str, hostname: &str) -> Result<(), Report> {
-    let problem_url = get_problem_url_from_hostname(problem, &hostname);
-    let sample_url = format!("{}/file/statement/samples.zip", problem_url);
+async fn fetch_tests(app: &App, problem: &str, problem_url: &str) -> Result<(), Report> {
+    let sample_url = get_sample_url_from_problem_url(problem_url);
     let mut tmpfile = tempfile::tempfile().wrap_err("🙀 Failed to create temporary file")?;
 
     let mut response = app.http_client.client.get(&sample_url).send().await?;
@@ -69,11 +91,11 @@ async fn fetch_tests(app: &App, problem: &str, hostname: &str) -> Result<(), Rep
             zip.extract(&test_dir)
                 .wrap_err("🙀 Failed to extract samples.zip")?;
 
-            return Ok(());
+            Ok(())
         }
         reqwest::StatusCode::NOT_FOUND => {
             println!("🤷 It seems that this problem does not have any test files!");
-            return Ok(());
+            Ok(())
         }
         _ => {
             let status = response.status();
