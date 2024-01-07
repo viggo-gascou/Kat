@@ -25,6 +25,11 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
         .next()
         .ok_or_else(|| eyre::eyre!("🙀 Failed to extract hostname from URL"))?;
 
+    if hostname != "open.kattis.com" {
+        let login_url = format!("https://{}/login", hostname);
+        app.http_client.login(app, &login_url).await?;
+    }
+    
     if !problem_exists(app, problem, hostname).await? {
         eyre::bail!("🙀 Problem {} does not exist!", problem);
     }
