@@ -22,7 +22,6 @@ pub struct InternalConfig {
 
 impl InternalConfig {
     pub fn new() -> Result<Self, Report> {
-        
         let config_location = InternalConfig::get_config_location()?;
         let internal_config = InternalConfig {
             config_location: config_location.clone(),
@@ -63,7 +62,10 @@ impl InternalConfig {
     pub fn set_location(&mut self, path: String) -> Result<String, Report> {
         let path = PathBuf::from(shellexpand::full(&path).unwrap().to_string());
         if !path.is_dir() {
-            eyre::bail!("🙀 The provided path, {}, is not a directory", path.display());
+            eyre::bail!(
+                "🙀 The provided path, {}, is not a directory",
+                path.display()
+            );
         }
 
         self.config_location = path
@@ -120,8 +122,10 @@ impl Kattisrc {
             .to_string();
 
         if !config_file.exists() {
-            eyre::bail!("🙀 No kattisrc file found in the config directory at {config_file_str}!
-                        Please download one and place it in the correct directory!");
+            eyre::bail!(
+                "🙀 No kattisrc file found in the config directory at {config_file_str}!
+                        Please download one and place it in the correct directory!"
+            );
         }
 
         let config = config::Config::builder()
