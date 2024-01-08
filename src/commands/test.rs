@@ -27,45 +27,78 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
         &problem_path,
         &problem_id,
     )?;
-    let tests = find_test_files(app, args, &problem_path, "in")?;
+    let tests = find_test_files(app, &args.test_cases, &problem_path, "in")?;
+    let language = match &args.language {
+        Some(lang) => {
+            if app.config.kat_config.languages.contains_key(lang) {
+                lang
+            } else {
+                eyre::bail!("🙀 Invalid language: {}", lang);
+            }
+        }
+        None => &app.config.kat_config.default.language,
+    };
 
     println!(
         "🧪 Testing problem: {} with the file {} ...\n",
         problem_id, &problem_file
     );
 
-    test_problem(
+    let passed = test_problem(
         app,
-        args,
         &problem_id,
         &problem_path,
         &problem_file_path,
         tests,
+        language,
     )
     .await?;
+
+    if passed {
+        println!("🏁 All tests passed!");
+        if args.submit {
+            let submit = dialoguer::Select::new()
+                .with_prompt("Do you want to submit this file?")
+                .default(0)
+                .items(&["Yes", "No"])
+                .interact()
+                .wrap_err("🙀 Failed to get user input")?;
+            if submit == 0 {
+                let submission = Submission {
+                    problem_id: problem_id.to_string(),
+                    language,
+                    problem_file: problem_file_path
+                        .file_name()
+                        .expect("🙀 Failed to get file name from input file")
+                        .to_str()
+                        .wrap_err("🙀 Failed to convert file name to string")?
+                        .to_string(),
+                    problem_file_path: problem_file_path.to_path_buf(),
+                };
+                send_submission(app, submission).await?;
+            } else {
+                println!("🙀 Submission aborted");
+            }
+        }
+    } else if app.args.verbose {
+        println!("❌ Some tests seem to have failed!");
+    } else {
+        println!("❌ Some tests seem to have failed, try re-running the tests, with --verbose!");
+    }
+
 
     Ok(())
 }
 
 async fn test_problem(
     app: &App,
-    args: &Test,
     problem_id: &str,
     problem_path: &Path,
     problem_file_path: &Path,
     tests: HashMap<PathBuf, PathBuf>,
-) -> Result<(), Report> {
+    language: &str,
+) -> Result<bool, Report> {
     let config = &app.config.kat_config;
-    let language = match &args.language {
-        Some(lang) => {
-            if config.languages.contains_key(lang) {
-                lang
-            } else {
-                eyre::bail!("🙀 Invalid language: {}", lang);
-            }
-        }
-        None => &config.default.language,
-    };
 
     let compile_command = match &config.languages.get(language).unwrap().compile_command {
         Some(compile_command) => compile_command,
@@ -93,42 +126,7 @@ async fn test_problem(
         }
     }
 
-    if all_tests_passed {
-        println!("🏁 All tests passed!");
-        if args.submit {
-            let submit = dialoguer::Select::new()
-                .with_prompt("Do you want to submit this file?")
-                .default(0)
-                .items(&["Yes", "No"])
-                .interact()
-                .wrap_err("🙀 Failed to get user input")?;
-            if submit == 0 {
-                let submission = Submission {
-                    problem_id: problem_id.to_string(),
-                    language,
-                    problem_file: problem_file_path
-                        .file_name()
-                        .expect("🙀 Failed to get file name from input file")
-                        .to_str()
-                        .wrap_err("🙀 Failed to convert file name to string")?
-                        .to_string(),
-                    problem_file_path: problem_file_path.to_path_buf(),
-                };
-                send_submission(app, submission).await?;
-            } else {
-                println!("🙀 Submission aborted");
-            }
-            return Ok(());
-        } else {
-            return Ok(());
-        }
-    } else if app.args.verbose {
-        println!("❌ Some tests seem to have failed!");
-    } else {
-        println!("❌ Some tests seem to have failed, try re-running the tests, with --verbose!");
-    }
-
-    Ok(())
+    Ok(all_tests_passed)
 }
 
 fn compile_problem(
