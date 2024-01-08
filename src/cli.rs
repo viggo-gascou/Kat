@@ -193,12 +193,19 @@ pub struct Watch {
 				If not specified, the first file with the same name as the problem in the problem folder will be used.
                 If multiple files with the correct extension are found, you will be prompted to choose which one to use."
     )]
-    pub file: Option<PathBuf>,
+    pub problem: Option<PathBuf>,
     #[arg(
         short,
         long,
         help = "The id(s) of the test case(s) to test against.
 				If not specified, all test cases will be tested, e.g. '1', '1-3', or '1,3-5'."
     )]
-    pub test_case: Option<String>,
+    pub test_cases: Option<String>,
+    #[arg(
+        short,
+        long,
+        help = "The programming language to test the problem against. 
+                This can be used to override the default language set in the configuration file."
+    )]
+    pub language: Option<String>,
 }
