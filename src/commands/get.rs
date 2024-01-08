@@ -66,7 +66,7 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
 
     println!("📝 Creating template file for problem {}...", problem);
 
-    copy_template(app, args, problem)?;
+    copy_template(app, &args.language, problem)?;
 
     println!("👍 Successfully initialised the problem {}!", problem);
 

@@ -12,10 +12,7 @@ use color_eyre::{
 };
 use glob::glob;
 
-use crate::{
-    cli::{Get, Test},
-    App,
-};
+use crate::App;
 
 pub fn get_problem_dir(_app: &App, problem: &str) -> Result<PathBuf, Report> {
     let current_dir = std::env::current_dir().wrap_err("🙀 Failed to get current directory")?;
@@ -31,13 +28,17 @@ pub fn get_test_dir(app: &App, problem: &str) -> Result<PathBuf, Report> {
     Ok(test_dir)
 }
 
-pub fn copy_template(app: &App, args: &Get, mut problem: &str) -> Result<(), Report> {
+pub fn copy_template(
+    app: &App,
+    language: &Option<String>,
+    mut problem: &str,
+) -> Result<(), Report> {
     let problem_dir = get_problem_dir(app, problem)?;
     let config_dir = PathBuf::from(&app.config.internal_config.config_location);
     let template_dir = config_dir.join("templates");
     let config = &app.config.kat_config;
 
-    let language = match &args.language {
+    let language = match &language {
         Some(lang) => {
             if config.languages.contains_key(lang) {
                 lang
@@ -129,7 +130,7 @@ fn parse_filter(filter: &str) -> Vec<u32> {
 
 pub fn find_test_files(
     _app: &App,
-    args: &Test,
+    test_cases: &Option<String>,
     problem_path: &Path,
     extension: &str,
 ) -> Result<HashMap<PathBuf, PathBuf>, Report> {
@@ -146,7 +147,7 @@ pub fn find_test_files(
         .expect("🙀 Failed to read glob pattern")
         .filter_map(Result::ok);
 
-    let filter = match &args.test_cases {
+    let filter = match &test_cases {
         Some(filter) => filter,
         None => "all",
     };
