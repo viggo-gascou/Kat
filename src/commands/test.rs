@@ -20,7 +20,7 @@ use color_eyre::{
 
 pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
-    let (problem_file, problem_file_path, _) = get_problem_file(
+    let (problem_file, problem_file_path, language) = get_problem_file(
         app,
         &args.problem,
         &args.language,
@@ -28,16 +28,6 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
         &problem_id,
     )?;
     let tests = find_test_files(app, &args.test_cases, &problem_path, "in")?;
-    let language = match &args.language {
-        Some(lang) => {
-            if app.config.kat_config.languages.contains_key(lang) {
-                lang
-            } else {
-                eyre::bail!("🙀 Invalid language: {}", lang);
-            }
-        }
-        None => &app.config.kat_config.default.language,
-    };
 
     println!(
         "🧪 Testing problem: {} with the file {} ...\n",
@@ -50,7 +40,7 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
         &problem_path,
         &problem_file_path,
         tests,
-        language,
+        &language,
     )
     .await?;
 
@@ -66,7 +56,7 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
             if submit == 0 {
                 let submission = Submission {
                     problem_id: problem_id.to_string(),
-                    language,
+                    language: &language,
                     problem_file: problem_file_path
                         .file_name()
                         .expect("🙀 Failed to get file name from input file")
@@ -90,7 +80,7 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
     Ok(())
 }
 
-async fn test_problem(
+pub async fn test_problem(
     app: &App,
     problem_id: &str,
     problem_path: &Path,
