@@ -121,7 +121,7 @@ pub struct Submit {
         short,
         long,
         default_value_t = false,
-        help = "If set, the the problem will be run against the test cases on the kattis server before submitting.
+        help = "If set, the the problem will be run against all of the local test cases before submitting.
                 If the problem fails any of the test cases, the submission will be aborted."
     )]
     pub test_first: bool,

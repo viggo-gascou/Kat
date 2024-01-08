@@ -4,8 +4,9 @@ use crate::{
     cli::Submit,
     utils::{
         check_change_hostname, find_problem_dir, get_problem_file,
-        get_submissions_url_from_hostname, get_submit_url_from_hostname, problem_exists,
+        get_submissions_url_from_hostname, get_submit_url_from_hostname, problem_exists, find_test_files,
     },
+    commands::test::test_problem,
     App,
 };
 
@@ -63,6 +64,26 @@ pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
     let should_submit;
 
     if problem_file_path.exists() {
+        if args.test_first {
+            let tests = find_test_files(app,  &Some("all".to_string()), &problem_path, "in")?;
+            println!(
+                "👀 Testing the file {} for the problem {} ...\n",
+                &problem_file, problem_id
+            );
+            if test_problem(
+                app,
+                &problem_id,
+                &problem_path,
+                &problem_file_path,
+                tests,
+                &language,
+            )
+            .await? {
+                println!("🏁 All tests passed, continuing with submission!");
+            } else {
+                eyre::bail!("❌ Some tests seem to have failed, aborting submission!");
+            }
+        }
         if args.yes {
             // If the user has specified the -y or --yes flag, we skip the confirmation dialog
             should_submit = true;
