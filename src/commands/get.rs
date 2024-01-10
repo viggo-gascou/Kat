@@ -2,8 +2,7 @@ use crate::{
     cli::Get,
     utils::fileutils::{copy_template, get_problem_dir, get_test_dir},
     utils::webutils::{
-        check_change_hostname, get_sample_url_from_problem_url,
-        is_problem_id, problem_exists,
+        check_change_hostname, get_sample_url_from_problem_url, is_problem_id, problem_exists,
     },
     App,
 };
@@ -29,7 +28,7 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
         let login_url = format!("https://{}/login", hostname);
         app.http_client.login(app, &login_url).await?;
     }
-    
+
     if !problem_exists(app, problem, hostname).await? {
         eyre::bail!("🙀 Problem {} does not exist!", problem);
     }
@@ -58,7 +57,6 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
         std::fs::create_dir(&problem_dir)
             .wrap_err("🙀 Failed to create problem directory at this location")?;
     }
-
 
     println!("📥 Fetching problem {} from {}...", problem, url);
 

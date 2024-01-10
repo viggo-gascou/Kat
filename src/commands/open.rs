@@ -30,7 +30,8 @@ pub async fn open(app: &App, args: &Open) -> Result<(), Report> {
 
     let problem_url = check_change_hostname(app, &problem_id, "get")?;
 
-    webbrowser::open(&problem_url).wrap_err(format!("🌐 Website {} could not be opened!", problem_url))?;
+    webbrowser::open(&problem_url)
+        .wrap_err(format!("🌐 Website {} could not be opened!", problem_url))?;
 
     Ok(())
 }

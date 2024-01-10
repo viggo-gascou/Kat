@@ -20,14 +20,9 @@ use color_eyre::{
 
 pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
-    let (problem_file, problem_file_path, language) = get_problem_file(
-        app,
-        &args.problem,
-        &args.language,
-        &problem_path,
-        &problem_id,
-    )?;
-    let tests = find_test_files(app, &args.test_cases, &problem_path, "in")?;
+    let (problem_file, problem_file_path, language) =
+        get_problem_file(app, &args.file, &args.language, &problem_path, &problem_id)?;
+    let tests = find_test_files(app, &args.test_cases, &problem_path)?;
 
     println!(
         "🧪 Testing problem: {} with the file {} ...\n",
@@ -75,7 +70,6 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
     } else {
         println!("❌ Some tests seem to have failed, try re-running the tests, with --verbose!");
     }
-
 
     Ok(())
 }

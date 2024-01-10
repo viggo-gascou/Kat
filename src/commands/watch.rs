@@ -20,14 +20,9 @@ use color_eyre::{
 
 pub async fn watch(app: &App, args: &Watch) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
-    let (problem_file, problem_file_path, language) = get_problem_file(
-        app,
-        &args.problem,
-        &args.language,
-        &problem_path,
-        &problem_id,
-    )?;
-    let tests = find_test_files(app, &args.test_cases, &problem_path, "in")?;
+    let (problem_file, problem_file_path, language) =
+        get_problem_file(app, &args.file, &args.language, &problem_path, &problem_id)?;
+    let tests = find_test_files(app, &args.test_cases, &problem_path)?;
 
     println!(
         "👀 Watching the file {} for changes to test the problem {} ...\n",
@@ -88,7 +83,7 @@ async fn watch_problem(
         ))?;
         match event {
             Ok(event) => {
-				// Only run tests if the data/content of the file changed - not if if saved again without changes
+                // Only run tests if the data/content of the file changed - not if if saved again without changes
                 if let EventKind::Modify(ModifyKind::Data(_)) = event.kind {
                     println!("👀 File changed, testing again ...");
                     if test_problem(

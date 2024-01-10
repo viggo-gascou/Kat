@@ -2,11 +2,11 @@ use std::{fs, io::Write, path::PathBuf};
 
 use crate::{
     cli::Submit,
-    utils::{
-        check_change_hostname, find_problem_dir, get_problem_file,
-        get_submissions_url_from_hostname, get_submit_url_from_hostname, problem_exists, find_test_files,
-    },
     commands::test::test_problem,
+    utils::{
+        check_change_hostname, find_problem_dir, find_test_files, get_problem_file,
+        get_submissions_url_from_hostname, get_submit_url_from_hostname, problem_exists,
+    },
     App,
 };
 
@@ -14,7 +14,7 @@ use regex::Regex;
 use scraper::{Html, Selector};
 
 use color_eyre::{
-    eyre::{self, ContextCompat, Context},
+    eyre::{self, Context, ContextCompat},
     Report,
 };
 use reqwest::multipart::{Form, Part};
@@ -48,13 +48,8 @@ pub struct SubmissionTest {
 
 pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
-    let (problem_file, problem_file_path, language) = get_problem_file(
-        app,
-        &args.problem,
-        &args.language,
-        &problem_path,
-        &problem_id,
-    )?;
+    let (problem_file, problem_file_path, language) =
+        get_problem_file(app, &args.file, &args.language, &problem_path, &problem_id)?;
     let submission = Submission {
         problem_id: problem_id.clone(),
         language: &language,
@@ -65,7 +60,7 @@ pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
 
     if problem_file_path.exists() {
         if args.test_first {
-            let tests = find_test_files(app,  &Some("all".to_string()), &problem_path, "in")?;
+            let tests = find_test_files(app, &Some("all".to_string()), &problem_path)?;
             println!(
                 "👀 Testing the file {} for the problem {} ...\n",
                 &problem_file, problem_id
@@ -78,7 +73,8 @@ pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
                 tests,
                 &language,
             )
-            .await? {
+            .await?
+            {
                 println!("🏁 All tests passed, continuing with submission!");
             } else {
                 eyre::bail!("❌ Some tests seem to have failed, aborting submission!");
