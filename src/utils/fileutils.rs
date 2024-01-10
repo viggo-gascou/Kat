@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     collections::HashMap,
     env::current_dir,
     fs,
@@ -132,51 +133,91 @@ pub fn find_test_files(
     _app: &App,
     test_cases: &Option<String>,
     problem_path: &Path,
-    extension: &str,
 ) -> Result<HashMap<PathBuf, PathBuf>, Report> {
+    let extensions = ["in", "ans"];
     let test_path = problem_path.join("tests");
     if !test_path.exists() {
         eyre::bail!("🙀 This problem does not have any tests - not testing!")
     }
-    let test_path = test_path
-        .to_str()
-        .expect("🙀 Failed to convert problem path to string")
-        .to_string();
-    let pattern = format!("{test_path}/*.{extension}");
-    let files = glob(&pattern)
-        .expect("🙀 Failed to read glob pattern")
-        .filter_map(Result::ok);
-
     let filter = match &test_cases {
         Some(filter) => filter,
         None => "all",
     };
+    let test_path = test_path
+        .to_str()
+        .expect("🙀 Failed to convert problem path to string")
+        .to_string();
 
-    let matching_files = if filter == "all" {
-        files.collect()
-    } else {
-        let test_filter = parse_filter(filter);
-        files
-            .filter(|file| {
-                let file_name: u32 = file
-                    .file_stem()
-                    .expect("🙀 Failed to get file name from path")
-                    .to_str()
-                    .expect("🙀 Failed to convert file name to string")
-                    .parse()
-                    .expect("🙀 File name is not a valid number");
-                test_filter.contains(&file_name)
-            })
-            .collect::<Vec<PathBuf>>()
-    };
+    let mut tests_by_ext = HashMap::new();
 
-    let mut test_files = HashMap::new();
-    for file in &matching_files {
-        let input = file.clone();
-        let answer = file.with_extension("ans");
-        test_files.insert(input, answer);
+    for extension in extensions {
+        let pattern = format!("{test_path}/*.{}", &extension);
+        let mut files = glob(&pattern)
+            .expect("🙀 Failed to read glob pattern")
+            .filter_map(Result::ok)
+            .collect::<Vec<PathBuf>>();
+
+        // Sort files by their stem i.e., the number
+        files.sort_by_key(|path| {
+            path.file_stem()
+                .and_then(|stem| stem.to_str())
+                .and_then(|s| s.parse::<u32>().ok())
+                .unwrap_or(0)
+        });
+
+        let matching_files = if filter == "all" {
+            files
+        } else {
+            let test_filter = parse_filter(filter);
+            files
+                .into_iter()
+                .filter(|file| {
+                    let file_name: u32 = file
+                        .file_stem()
+                        .expect("🙀 Failed to get file name from path")
+                        .to_str()
+                        .expect("🙀 Failed to convert file name to string")
+                        .parse()
+                        .expect("🙀 File name is not a valid number");
+                    test_filter.contains(&file_name)
+                })
+                .collect::<Vec<PathBuf>>()
+        };
+
+        tests_by_ext.insert(extension, matching_files);
     }
-    Ok(test_files)
+
+    if let Some(in_files) = tests_by_ext.get("in") {
+        if let Some(ans_files) = tests_by_ext.get("ans") {
+            match in_files.len().cmp(&ans_files.len()) {
+                Ordering::Greater => {
+                    eyre::bail!("🙀 There are more input test files than answer files. Are they all in the {test_path} directory?");
+                }
+                Ordering::Less => {
+                    eyre::bail!("🙀 There are more answer files than input test files. Are they all in the {test_path} directory?");
+                }
+                Ordering::Equal => {
+                    if in_files.is_empty() || ans_files.is_empty() {
+                        let file_type = if in_files.is_empty() {
+                            "input"
+                        } else {
+                            "answer"
+                        };
+                        eyre::bail!("🙀 No {file_type} files found in directory: {test_path}");
+                    }
+                    let mut test_files = HashMap::new();
+                    for (in_file, ans_file) in in_files.iter().zip(ans_files.iter()) {
+                        test_files.insert(in_file.clone(), ans_file.clone());
+                    }
+                    Ok(test_files)
+                }
+            }
+        } else {
+            eyre::bail!("🙀 No answer files found in directory: {}", test_path);
+        }
+    } else {
+        eyre::bail!("🙀 No input files found in directory: {}", test_path);
+    }
 }
 
 pub fn find_problem_files(
@@ -201,12 +242,12 @@ pub fn find_problem_files(
 
 pub fn get_problem_file(
     app: &App,
-    problem: &Option<PathBuf>,
+    file: &Option<PathBuf>,
     language: &Option<String>,
     problem_path: &Path,
     problem_id: &String,
 ) -> Result<(String, PathBuf, String), Report> {
-    // if args.problem is not set, try to find a file with the same name as the problem id
+    // if args.file is not set, try to find a file with the same name as the problem id
     // that has a matching extension from default language set in the config
     // if multiple files are found, prompt the user to choose which one to use
     println!("🔍 Looking for problem file ...\n");
@@ -221,7 +262,7 @@ pub fn get_problem_file(
         }
         None => &config.default.language,
     };
-    let (problem_file, problem_file_path) = match &problem {
+    let (problem_file, problem_file_path) = match &file {
         Some(problem_file_path) => (
             problem_file_path
                 .file_name()
