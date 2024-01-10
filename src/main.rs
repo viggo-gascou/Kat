@@ -1,12 +1,8 @@
 pub mod cli;
-mod utils;
 mod commands;
-use cli::parse;
-use color_eyre::Report;
-
-
-
-use color_eyre::Result;
+mod utils;
+use cli::parse_cli;
+use color_eyre::{Report, Result};
 
 use crate::utils::{config, webutils};
 
@@ -21,10 +17,10 @@ pub struct App {
 async fn main() -> Result<(), Report> {
     // Setup the default panic and error report hooks for color_eyre
     color_eyre::install()?;
-    
-    let args = parse();
+
+    let args = parse_cli();
     run(args).await;
-    
+
     Ok(())
 }
 
@@ -36,14 +32,17 @@ pub async fn run(args: cli::Cli) {
     exit_on_err(result, verbose);
 }
 
-
-async fn attempt_run(args: cli::Cli) -> crate::Result<()>{ 
+async fn attempt_run(args: cli::Cli) -> crate::Result<()> {
     use cli::Commands::*;
 
     let config = config::Config::load()?;
     let http_client = webutils::HttpClient::new().unwrap();
 
-    let app = App { args, config, http_client };
+    let app = App {
+        args,
+        config,
+        http_client,
+    };
 
     match &app.args.subcommand {
         Config(args) => commands::config(&app, args).await,
