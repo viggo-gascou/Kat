@@ -2,9 +2,9 @@ pub mod cli;
 mod commands;
 mod utils;
 use cli::parse_cli;
-use color_eyre::{Report, Result};
+use utils::{config, webutils};
 
-use crate::utils::{config, webutils};
+use color_eyre::{Report, Result};
 
 #[derive(Debug)]
 pub struct App {

@@ -3,15 +3,15 @@ use crate::{
     utils::webutils::{check_change_hostname, is_problem_id},
     App,
 };
-use color_eyre::{eyre, eyre::Context, Report};
 
-use std::env;
+use color_eyre::{eyre, eyre::Context, Report};
 
 pub async fn open(app: &App, args: &Open) -> Result<(), Report> {
     // first get the problem id from the current directory if it is not specified
     let problem_id = args.problem.as_ref().map_or_else(
         || -> Result<String, Report> {
-            let current_dir = env::current_dir().wrap_err("🙀 Failed to get current directory!")?;
+            let current_dir =
+                std::env::current_dir().wrap_err("🙀 Failed to get current directory!")?;
             let file_name = current_dir
                 .file_name()
                 .ok_or_else(|| eyre::eyre!("🙀 Failed to get file name from path"))?;

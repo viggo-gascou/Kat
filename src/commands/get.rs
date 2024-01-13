@@ -6,11 +6,13 @@ use crate::{
     },
     App,
 };
-use color_eyre::{eyre, eyre::Context, Report};
+
 use std::{
     fs::{self},
     io::Write,
 };
+
+use color_eyre::{eyre, eyre::Context, Report};
 
 pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
     let problem = &args.problem;

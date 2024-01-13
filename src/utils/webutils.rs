@@ -1,8 +1,9 @@
 use crate::App;
 
 use color_eyre::{eyre, eyre::Context, Report};
+
 use regex::Regex;
-use reqwest::{Client, StatusCode, multipart::Form};
+use reqwest::{multipart::Form, Client, StatusCode};
 use secrecy::ExposeSecret;
 
 const USER_AGENT: &str = concat!(env!("CARGO_PKG_REPOSITORY"), "/", env!("CARGO_PKG_VERSION"));
@@ -71,7 +72,7 @@ pub fn check_change_hostname(app: &App, problem: &str, url_type: &str) -> Result
         if change_hostname {
             hostname = format!("{}.kattis.com", problem_hostname);
         }
-    } 
+    }
     if url_type == "get" {
         Ok(get_problem_url_from_hostname(problem, &hostname))
     } else if url_type == "submit" {
@@ -79,7 +80,9 @@ pub fn check_change_hostname(app: &App, problem: &str, url_type: &str) -> Result
     } else if url_type == "submissions" {
         Ok(get_submissions_url_from_hostname(&hostname, problem))
     } else if url_type == "sample" {
-        Ok(get_sample_url_from_problem_url(&get_problem_url_from_hostname(problem, &hostname)))
+        Ok(get_sample_url_from_problem_url(
+            &get_problem_url_from_hostname(problem, &hostname),
+        ))
     } else if url_type == "login" {
         Ok(get_login_url_from_hostname(&hostname))
     } else {
@@ -126,8 +129,10 @@ impl HttpClient {
         } else if status == StatusCode::FORBIDDEN {
             eyre::bail!("🙀 Invalid username or token - please check your credentials in the kattisrc file!")
         } else {
-            eyre::bail!("🙀 Failed to login to kattis, error code: {} - {:?}", status, status.canonical_reason())
+            eyre::bail!(
+                "🙀 Failed to login to kattis, error: {}",
+                status,
+            )
         }
-
     }
 }
