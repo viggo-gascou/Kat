@@ -1,5 +1,7 @@
 use clap::CommandFactory;
-use clap_complete::{generate_to, Shell::Bash, Shell::Elvish, Shell::Fish, Shell::Zsh};
+use clap_complete::{
+    generate_to, Shell::Bash, Shell::Elvish, Shell::Fish, Shell::PowerShell, Shell::Zsh,
+};
 use std::{env, error::Error};
 
 include!("src/cli.rs");
@@ -12,9 +14,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut cmd = Cli::command();
 
-    let sup_shells = [Bash, Zsh, Fish, Elvish];
+    let shells = [Bash, Zsh, Fish, Elvish, PowerShell];
 
-    for &shell in sup_shells.iter() {
+    for &shell in shells.iter() {
         generate_to(shell, &mut cmd, "kat", &outdir)?;
         println!("Generated completion file for {} shell", shell);
     }
