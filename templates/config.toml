@@ -10,18 +10,8 @@ language = "python 3"
 
 [languages]
 # To add a new language, create a new section with the format [languages.<language_name>].
-# The language name can be anything you want, but it should be unique.
-# For python particularly the version number should be included with a space.
-# Each language section should have the following members:
-# - compile_command (optional): The command to compile a program in this language. Not all languages need this for example Python.
-# - execute_command: The command to execute a program in this language.
-# - extensions: The file extensions associated with this language. This should be a list of strings.
-# - template (optional): The filename of the template file you want to use when getting a problem from kattis - the variables below can also be used in the template file itself.
-# The commands can use the following variables:
-# - {source_file}: The name of the source file. 
-# - {source_file_no_ext}: The name of the source file without its extension. This can for example be used with Java where the public class name must match the filename.
-# - {executable_path}: The path to the executable file, including the output directory and the executable file name. 
-# - {output_directory}: The directory where the compiled files should be placed. This can be used if for example the compiler generates multiple (auxiliary) files.
+# The language name should be the name of the language as it appears on kattis have a look at https://open.kattis.com/languages
+# If the language name contains spaces, put it in quotes, as in the example below.
 
 [languages."python 3"]
 execute_command = "python {source_file}"
