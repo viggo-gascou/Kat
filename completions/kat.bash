@@ -21,6 +21,9 @@ _kat() {
             kat,help)
                 cmd="kat__help"
                 ;;
+            kat,init)
+                cmd="kat__init"
+                ;;
             kat,open)
                 cmd="kat__open"
                 ;;
@@ -36,9 +39,6 @@ _kat() {
             kat__config,help)
                 cmd="kat__config__help"
                 ;;
-            kat__config,init)
-                cmd="kat__config__init"
-                ;;
             kat__config,locate)
                 cmd="kat__config__locate"
                 ;;
@@ -47,9 +47,6 @@ _kat() {
                 ;;
             kat__config__help,help)
                 cmd="kat__config__help__help"
-                ;;
-            kat__config__help,init)
-                cmd="kat__config__help__init"
                 ;;
             kat__config__help,locate)
                 cmd="kat__config__help__locate"
@@ -66,6 +63,9 @@ _kat() {
             kat__help,help)
                 cmd="kat__help__help"
                 ;;
+            kat__help,init)
+                cmd="kat__help__init"
+                ;;
             kat__help,open)
                 cmd="kat__help__open"
                 ;;
@@ -77,9 +77,6 @@ _kat() {
                 ;;
             kat__help,watch)
                 cmd="kat__help__watch"
-                ;;
-            kat__help__config,init)
-                cmd="kat__help__config__init"
                 ;;
             kat__help__config,locate)
                 cmd="kat__help__config__locate"
@@ -94,7 +91,7 @@ _kat() {
 
     case "${cmd}" in
         kat)
-            opts="-v -h -V --verbose --help --version config get open submit test watch help"
+            opts="-v -q -h -V --verbose --quiet --help --version config get init open submit test watch help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -108,7 +105,7 @@ _kat() {
             return 0
             ;;
         kat__config)
-            opts="-v -h --verbose --help init locate set help"
+            opts="-v -q -h --verbose --quiet --help locate set help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -122,7 +119,7 @@ _kat() {
             return 0
             ;;
         kat__config__help)
-            opts="init locate set help"
+            opts="locate set help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -136,20 +133,6 @@ _kat() {
             return 0
             ;;
         kat__config__help__help)
-            opts=""
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        kat__config__help__init)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -191,22 +174,8 @@ _kat() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        kat__config__init)
-            opts="-v -h --verbose --help"
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
         kat__config__locate)
-            opts="-v -h --verbose --help"
+            opts="-v -q -h --verbose --quiet --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -220,7 +189,7 @@ _kat() {
             return 0
             ;;
         kat__config__set)
-            opts="-v -h --verbose --help <PATH>"
+            opts="-v -q -h --verbose --quiet --help <PATH>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -234,7 +203,7 @@ _kat() {
             return 0
             ;;
         kat__get)
-            opts="-p -l -v -h --path --language --verbose --help <PROBLEM>"
+            opts="-p -l -v -q -h --path --language --verbose --quiet --help <PROBLEM>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -264,7 +233,7 @@ _kat() {
             return 0
             ;;
         kat__help)
-            opts="config get open submit test watch help"
+            opts="config get init open submit test watch help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -278,22 +247,8 @@ _kat() {
             return 0
             ;;
         kat__help__config)
-            opts="init locate set"
+            opts="locate set"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        kat__help__config__init)
-            opts=""
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 4 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
@@ -348,6 +303,20 @@ _kat() {
             return 0
             ;;
         kat__help__help)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        kat__help__init)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -417,8 +386,22 @@ _kat() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        kat__init)
+            opts="-y -v -q -h --yes --verbose --quiet --help [CHOICE]"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         kat__open)
-            opts="-v -h --verbose --help [PROBLEM]"
+            opts="-v -q -h --verbose --quiet --help [PROBLEM]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -432,7 +415,7 @@ _kat() {
             return 0
             ;;
         kat__submit)
-            opts="-f -l -t -y -o -v -h --file --language --test-first --yes --open --verbose --help [PATH]"
+            opts="-f -l -t -y -o -v -q -h --file --language --test-first --yes --open --verbose --quiet --help [PATH]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -462,7 +445,7 @@ _kat() {
             return 0
             ;;
         kat__test)
-            opts="-f -t -l -s -v -h --file --test-cases --language --submit --verbose --help [PATH]"
+            opts="-f -t -l -s -v -q -h --file --test-cases --language --submit --verbose --quiet --help [PATH]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -500,7 +483,7 @@ _kat() {
             return 0
             ;;
         kat__watch)
-            opts="-f -t -l -v -h --file --test-cases --language --verbose --help [PATH]"
+            opts="-f -t -l -v -q -h --file --test-cases --language --verbose --quiet --help [PATH]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

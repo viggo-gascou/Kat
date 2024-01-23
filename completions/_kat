@@ -15,8 +15,10 @@ _kat() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '-V[Print version]' \
@@ -32,8 +34,10 @@ _kat() {
         case $line[1] in
             (config)
 _arguments "${_arguments_options[@]}" \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
 ":: :_kat__config_commands" \
@@ -46,26 +50,22 @@ _arguments "${_arguments_options[@]}" \
         (( CURRENT += 1 ))
         curcontext="${curcontext%:*:*}:kat-config-command-$line[1]:"
         case $line[1] in
-            (init)
+            (locate)
 _arguments "${_arguments_options[@]}" \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
-'-h[Print help]' \
-'--help[Print help]' \
-&& ret=0
-;;
-(locate)
-_arguments "${_arguments_options[@]}" \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
 ;;
 (set)
 _arguments "${_arguments_options[@]}" \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
 ':path -- The new location for the configuration files.:_files -/' \
@@ -83,11 +83,7 @@ _arguments "${_arguments_options[@]}" \
         (( CURRENT += 1 ))
         curcontext="${curcontext%:*:*}:kat-config-help-command-$line[1]:"
         case $line[1] in
-            (init)
-_arguments "${_arguments_options[@]}" \
-&& ret=0
-;;
-(locate)
+            (locate)
 _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
@@ -117,18 +113,37 @@ If not specified, the problem will be downloaded to the current directory.]:PATH
 If not specified, the language will be determined default language in the configuration file.]:LANGUAGE: ' \
 '--language=[The programming language to setup the problem for.
 If not specified, the language will be determined default language in the configuration file.]:LANGUAGE: ' \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
 ':problem -- The id of the problem you want to download from kattis. 
 If you don'\''t know the id, you can find it from the url of the problem, i.e. https\://open.kattis.com/problems/<PROBLEM_ID>:' \
 && ret=0
 ;;
+(init)
+_arguments "${_arguments_options[@]}" \
+'-y[If set, you will not be prompted to confirm whether you want to overwrite existing config files.]' \
+'--yes[If set, you will not be prompted to confirm whether you want to overwrite existing config files.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'::choice -- Shortcut to specify which files to download. Options are '\''all'\'' or '\''config'\''. 
+'\''config'\'' will only download the config files, while '\''all'\'' will download all files.
+If not specified, you will be prompted to choose which files.:' \
+&& ret=0
+;;
 (open)
 _arguments "${_arguments_options[@]}" \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '::problem -- The id of the problem you want to open in the browser.:' \
@@ -154,11 +169,13 @@ If the problem fails any of the test cases, the submission will be aborted.]' \
 '--yes[If set, you will not be prompted to confirm the submission before it is sent to kattis.]' \
 '-o[If set, the submission will be opened in the browser after all tests have been run on the kattis server.]' \
 '--open[If set, the submission will be opened in the browser after all tests have been run on the kattis server.]' \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
-'::path -- The path of the problem (folder) you want to submit.:_files -/' \
+'::path -- The path of the problem (folder) you want to submit. By default, the current directory is used.:_files -/' \
 && ret=0
 ;;
 (test)
@@ -177,8 +194,10 @@ This can be used to override the default language set in the configuration file.
 This can be used to override the default language set in the configuration file.]:LANGUAGE: ' \
 '-s[If set, try to submit the problem to kattis if all tests pass.]' \
 '--submit[If set, try to submit the problem to kattis if all tests pass.]' \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '::path -- The path of the problem (folder) you want to test. By default, the current directory is used.:_files -/' \
@@ -200,8 +219,10 @@ If not specified, all test cases will be tested, e.g. '\''1'\'', '\''1-3'\'', or
 This can be used to override the default language set in the configuration file.]:LANGUAGE: ' \
 '--language=[The programming language to test the problem against. 
 This can be used to override the default language set in the configuration file.]:LANGUAGE: ' \
-'-v[If set, enables verbose output, which prints more information to the terminal.]' \
-'--verbose[If set, enables verbose output, which prints more information to the terminal.]' \
+'*-v[Increase logging verbosity]' \
+'*--verbose[Increase logging verbosity]' \
+'(-v --verbose)*-q[Decrease logging verbosity]' \
+'(-v --verbose)*--quiet[Decrease logging verbosity]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '::path -- The path of the problem (folder) you want to watch.:_files -/' \
@@ -231,11 +252,7 @@ _arguments "${_arguments_options[@]}" \
         (( CURRENT += 1 ))
         curcontext="${curcontext%:*:*}:kat-help-config-command-$line[1]:"
         case $line[1] in
-            (init)
-_arguments "${_arguments_options[@]}" \
-&& ret=0
-;;
-(locate)
+            (locate)
 _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
@@ -248,6 +265,10 @@ _arguments "${_arguments_options[@]}" \
 esac
 ;;
 (get)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+(init)
 _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
@@ -283,8 +304,9 @@ esac
 (( $+functions[_kat_commands] )) ||
 _kat_commands() {
     local commands; commands=(
-'config:Configure kat' \
+'config:Commands to help you configure kat' \
 'get:Get a problem from kattis' \
+'init:Initialise the configuration files.' \
 'open:Open a problem in the browser' \
 'submit:Submit a problem to kattis' \
 'test:Test a problem against its test case(s)' \
@@ -296,7 +318,6 @@ _kat_commands() {
 (( $+functions[_kat__config_commands] )) ||
 _kat__config_commands() {
     local commands; commands=(
-'init:Initialise the configuration files.' \
 'locate:Locate the configuration files.' \
 'set:Set the location of where the configuration files are stored.' \
 'help:Print this message or the help of the given subcommand(s)' \
@@ -306,7 +327,6 @@ _kat__config_commands() {
 (( $+functions[_kat__help__config_commands] )) ||
 _kat__help__config_commands() {
     local commands; commands=(
-'init:Initialise the configuration files.' \
 'locate:Locate the configuration files.' \
 'set:Set the location of where the configuration files are stored.' \
     )
@@ -325,7 +345,6 @@ _kat__help__get_commands() {
 (( $+functions[_kat__config__help_commands] )) ||
 _kat__config__help_commands() {
     local commands; commands=(
-'init:Initialise the configuration files.' \
 'locate:Locate the configuration files.' \
 'set:Set the location of where the configuration files are stored.' \
 'help:Print this message or the help of the given subcommand(s)' \
@@ -340,8 +359,9 @@ _kat__config__help__help_commands() {
 (( $+functions[_kat__help_commands] )) ||
 _kat__help_commands() {
     local commands; commands=(
-'config:Configure kat' \
+'config:Commands to help you configure kat' \
 'get:Get a problem from kattis' \
+'init:Initialise the configuration files.' \
 'open:Open a problem in the browser' \
 'submit:Submit a problem to kattis' \
 'test:Test a problem against its test case(s)' \
@@ -355,20 +375,15 @@ _kat__help__help_commands() {
     local commands; commands=()
     _describe -t commands 'kat help help commands' commands "$@"
 }
-(( $+functions[_kat__config__help__init_commands] )) ||
-_kat__config__help__init_commands() {
+(( $+functions[_kat__help__init_commands] )) ||
+_kat__help__init_commands() {
     local commands; commands=()
-    _describe -t commands 'kat config help init commands' commands "$@"
+    _describe -t commands 'kat help init commands' commands "$@"
 }
-(( $+functions[_kat__config__init_commands] )) ||
-_kat__config__init_commands() {
+(( $+functions[_kat__init_commands] )) ||
+_kat__init_commands() {
     local commands; commands=()
-    _describe -t commands 'kat config init commands' commands "$@"
-}
-(( $+functions[_kat__help__config__init_commands] )) ||
-_kat__help__config__init_commands() {
-    local commands; commands=()
-    _describe -t commands 'kat help config init commands' commands "$@"
+    _describe -t commands 'kat init commands' commands "$@"
 }
 (( $+functions[_kat__config__help__locate_commands] )) ||
 _kat__config__help__locate_commands() {
