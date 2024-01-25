@@ -11,7 +11,7 @@ use crate::{
 };
 
 use std::{
-    fs,
+    fs::{self},
     io::Write,
 };
 
