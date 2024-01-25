@@ -1,8 +1,3 @@
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
-
 use crate::{
     cli::Watch,
     commands::test::test_problem,
@@ -10,13 +5,17 @@ use crate::{
     App,
 };
 
-use notify::{event::ModifyKind, EventKind, RecommendedWatcher, Watcher};
+use std::path::{Path, PathBuf};
 
 use color_eyre::{
     self,
     eyre::{Context, ContextCompat},
     Report,
 };
+
+use notify::{event::ModifyKind, EventKind, RecommendedWatcher, Watcher};
+
+use colored::Colorize;
 
 pub async fn watch(app: &App, args: &Watch) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
@@ -25,8 +24,13 @@ pub async fn watch(app: &App, args: &Watch) -> Result<(), Report> {
     let tests = find_test_files(app, &args.test_cases, &problem_path)?;
 
     println!(
-        "👀 Watching the file {} for changes to test the problem {} ...\n",
-        &problem_file, problem_id
+        "{}",
+        format!(
+            "👀 Watching the file {} for changes to test the problem {} ...\n",
+            &problem_file, problem_id
+        )
+        .bold()
+        .bright_blue()
     );
 
     watch_problem(
@@ -47,7 +51,7 @@ async fn watch_problem(
     problem_id: &str,
     problem_path: &Path,
     problem_file_path: &Path,
-    tests: HashMap<PathBuf, PathBuf>,
+    tests: Vec<(PathBuf, PathBuf)>,
     language: &str,
 ) -> Result<(), Report> {
     let problem_file = problem_file_path
@@ -64,9 +68,7 @@ async fn watch_problem(
         problem_file_path,
         tests.clone(),
         language,
-    )
-    .await?
-    {
+    )? {
         print_pass_message(problem_id, problem_file);
     }
 
@@ -85,7 +87,10 @@ async fn watch_problem(
             Ok(event) => {
                 // Only run tests if the data/content of the file changed - not if if saved again without changes
                 if let EventKind::Modify(ModifyKind::Data(_)) = event.kind {
-                    println!("👀 File changed, testing again ...");
+                    println!(
+                        "{}",
+                        "👀 File changed, testing again ...".bold().bright_blue()
+                    );
                     if test_problem(
                         app,
                         problem_id,
@@ -93,12 +98,10 @@ async fn watch_problem(
                         problem_file_path,
                         tests.clone(),
                         language,
-                    )
-                    .await?
-                    {
+                    )? {
                         print_pass_message(problem_id, problem_file);
                     }
-                    println!("{}", "=".repeat(25)); // Separator line
+                    println!("{}", "=".repeat(25).bright_purple()); // Separator line
                 }
             }
             Err(e) => println!("watch error: {:?}", e),
@@ -107,14 +110,15 @@ async fn watch_problem(
 }
 
 fn print_pass_message(problem_id: &str, problem_file: &str) {
-    println!("🏁 All tests passed for problem {}! 🎉\n", problem_id);
     println!(
-        "If you want you can try to submit your solution using `kat submit {}`",
-        problem_id
+        "{}",
+        format!(
+            "🏁 All tests passed for problem {}! 🎉\n",
+            problem_id.underline()
+        )
+        .bright_green()
     );
-    println!(
-        "Or you can keep editing the file {} and the tests will be run again automatically",
-        problem_file
-    );
-    println!("Press Ctrl+C to stop watching the file and exit 😸")
+    println!("If you want you can try to submit your solution using {}
+Or you can keep editing the file {problem_file} and the tests will be run again automatically when you save it.
+Press Ctrl+C to stop watching the file and exit 😸",format!("kat submit {problem_id}").bold());
 }

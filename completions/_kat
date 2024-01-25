@@ -134,7 +134,7 @@ _arguments "${_arguments_options[@]}" \
 '-h[Print help]' \
 '--help[Print help]' \
 '::choice -- Shortcut to specify which files to download. Options are '\''all'\'' or '\''config'\''. 
-'\''config'\'' will only download the config files, while '\''all'\'' will download all files.
+'\''config'\'' will only download the config file, while '\''all'\'' will download all available config files.
 If not specified, you will be prompted to choose which files.:' \
 && ret=0
 ;;
@@ -306,7 +306,7 @@ _kat_commands() {
     local commands; commands=(
 'config:Commands to help you configure kat' \
 'get:Get a problem from kattis' \
-'init:Initialise the configuration files.' \
+'init:Initialise the configuration files' \
 'open:Open a problem in the browser' \
 'submit:Submit a problem to kattis' \
 'test:Test a problem against its test case(s)' \
@@ -361,7 +361,7 @@ _kat__help_commands() {
     local commands; commands=(
 'config:Commands to help you configure kat' \
 'get:Get a problem from kattis' \
-'init:Initialise the configuration files.' \
+'init:Initialise the configuration files' \
 'open:Open a problem in the browser' \
 'submit:Submit a problem to kattis' \
 'test:Test a problem against its test case(s)' \

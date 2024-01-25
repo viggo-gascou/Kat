@@ -28,7 +28,7 @@ set edit:completion:arg-completer[kat] = {|@words|
             cand --version 'Print version'
             cand config 'Commands to help you configure kat'
             cand get 'Get a problem from kattis'
-            cand init 'Initialise the configuration files.'
+            cand init 'Initialise the configuration files'
             cand open 'Open a problem in the browser'
             cand submit 'Submit a problem to kattis'
             cand test 'Test a problem against its test case(s)'
@@ -180,7 +180,7 @@ This can be used to override the default language set in the configuration file.
         &'kat;help'= {
             cand config 'Commands to help you configure kat'
             cand get 'Get a problem from kattis'
-            cand init 'Initialise the configuration files.'
+            cand init 'Initialise the configuration files'
             cand open 'Open a problem in the browser'
             cand submit 'Submit a problem to kattis'
             cand test 'Test a problem against its test case(s)'

@@ -31,7 +31,7 @@ Register-ArgumentCompleter -Native -CommandName 'kat' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Print version')
             [CompletionResult]::new('config', 'config', [CompletionResultType]::ParameterValue, 'Commands to help you configure kat')
             [CompletionResult]::new('get', 'get', [CompletionResultType]::ParameterValue, 'Get a problem from kattis')
-            [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialise the configuration files.')
+            [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialise the configuration files')
             [CompletionResult]::new('open', 'open', [CompletionResultType]::ParameterValue, 'Open a problem in the browser')
             [CompletionResult]::new('submit', 'submit', [CompletionResultType]::ParameterValue, 'Submit a problem to kattis')
             [CompletionResult]::new('test', 'test', [CompletionResultType]::ParameterValue, 'Test a problem against its test case(s)')
@@ -197,7 +197,7 @@ This can be used to override the default language set in the configuration file.
         'kat;help' {
             [CompletionResult]::new('config', 'config', [CompletionResultType]::ParameterValue, 'Commands to help you configure kat')
             [CompletionResult]::new('get', 'get', [CompletionResultType]::ParameterValue, 'Get a problem from kattis')
-            [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialise the configuration files.')
+            [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialise the configuration files')
             [CompletionResult]::new('open', 'open', [CompletionResultType]::ParameterValue, 'Open a problem in the browser')
             [CompletionResult]::new('submit', 'submit', [CompletionResultType]::ParameterValue, 'Submit a problem to kattis')
             [CompletionResult]::new('test', 'test', [CompletionResultType]::ParameterValue, 'Test a problem against its test case(s)')
