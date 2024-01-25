@@ -110,14 +110,6 @@ async fn watch_problem(
 }
 
 fn print_pass_message(problem_id: &str, problem_file: &str) {
-    println!(
-        "{}",
-        format!(
-            "🏁 All tests passed for problem {}! 🎉\n",
-            problem_id.underline()
-        )
-        .bright_green()
-    );
     println!("If you want you can try to submit your solution using {}
 Or you can keep editing the file {problem_file} and the tests will be run again automatically when you save it.
 Press Ctrl+C to stop watching the file and exit 😸",format!("kat submit {problem_id}").bold());

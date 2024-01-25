@@ -122,7 +122,15 @@ pub fn test_problem(
         }
     }
     let elapsed_time = format!("{:.2}", start_time.elapsed().as_secs_f64());
-    println!("{}",format!("🏁 All tests passed in {}s!", elapsed_time).bright_green());
+    println!(
+        "{}",
+        format!(
+            "🏁 All tests for {} passed in {}s!",
+            problem_id.underline(),
+            elapsed_time
+        )
+        .bright_green()
+    );
 
     Ok(all_tests_passed)
 }
@@ -194,7 +202,7 @@ fn execute_problem(
             }
             _ => eyre::eyre!("🙀 Failed to execute command with error: {}", e),
         })?;
-        let elapsed_time = format!("{:.2}", start_time.elapsed().as_secs_f64());
+    let elapsed_time = format!("{:.2}", start_time.elapsed().as_secs_f64());
 
     if !output.status.success() {
         // print all output
