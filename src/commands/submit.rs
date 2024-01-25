@@ -6,18 +6,19 @@ use crate::{
     utils::{
         check_change_hostname, find_problem_dir, find_test_files, get_problem_file,
         get_submissions_url_from_hostname, get_submit_url_from_hostname, problem_exists,
+        HttpClient,
     },
     App,
 };
-
-use regex::Regex;
-use scraper::{Html, Selector};
 
 use color_eyre::{
     eyre::{self, Context, ContextCompat},
     Report,
 };
+
+use regex::Regex;
 use reqwest::multipart::{Form, Part};
+use scraper::{Html, Selector};
 
 #[derive(Debug)]
 pub struct Submission<'a> {
@@ -46,6 +47,89 @@ pub struct SubmissionTest {
     pub status: String,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+enum SubmissionStatus {
+    Setup(String),
+    Running,
+    Accepted,
+    Failed(String),
+    Unknown,
+}
+
+impl SubmissionStatus {
+    fn from_str(status: &str) -> Self {
+        match status {
+            "New" | "Compiling" => Self::Setup(status.to_string()),
+            "Running" => Self::Running,
+            "Accepted" | "Accepted (100) " => Self::Accepted,
+            "Run Time Error"
+            | "Time Limit Exceeded"
+            | "Compile Error"
+            | "Memory Limit Exceeded"
+            | "Output Limit Exceeded"
+            | "Wrong Answer"
+            | "Judge Error" => Self::Failed(status.to_string()),
+            _ => Self::Unknown,
+        }
+    }
+
+    fn emoji(&self) -> &str {
+        match self {
+            Self::Setup(status) => match status.as_str() {
+                "New" => "🆕",
+                "Compiling" => "🛠️",
+                _ => "",
+            },
+            Self::Running => "🏃",
+            Self::Accepted => "✅",
+            Self::Failed(status) => match status.as_str() {
+                "Run Time Error" => "💥",
+                "Time Limit Exceeded" => "⌛️",
+                "Compile Error" => "🆘",
+                "Memory Limit Exceeded" => "🧠",
+                "Output Limit Exceeded" => "🌊",
+                "Wrong Answer" => "💔",
+                "Judge Error" => "🔮",
+                _ => "",
+            },
+            Self::Unknown => "",
+        }
+    }
+
+    fn is_finished(&self) -> bool {
+        matches!(self, Self::Accepted | Self::Failed(_))
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+enum TestStatus {
+    Accepted,
+    Failed,
+    Running,
+}
+
+impl TestStatus {
+    fn from_str(status: &str) -> Self {
+        match status {
+            "Accepted" => Self::Accepted,
+            "Wrong Answer" => Self::Failed,
+            _ => Self::Running,
+        }
+    }
+
+    fn emoji(&self) -> &str {
+        match self {
+            Self::Accepted => "🟢",
+            Self::Failed => "🔴",
+            Self::Running => "⚪",
+        }
+    }
+
+    fn is_finished(&self) -> bool {
+        matches!(self, Self::Accepted | Self::Failed)
+    }
+}
+
 pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
     let (problem_file, problem_file_path, language) =
@@ -65,18 +149,14 @@ pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
                 "👀 Testing the file {} for the problem {} ...\n",
                 &problem_file, problem_id
             );
-            if test_problem(
+            if !test_problem(
                 app,
                 &problem_id,
                 &problem_path,
                 &problem_file_path,
                 tests,
                 &language,
-            )
-            .await?
-            {
-                println!("🏁 All tests passed, continuing with submission!");
-            } else {
+            )? {
                 eyre::bail!("❌ Some tests seem to have failed, aborting submission!");
             }
         }
@@ -95,13 +175,14 @@ pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
 
         if should_submit {
             println!(
-                "🚀 Submitting problem: {} with the file {} ...\n",
+                "🚀 Submitting problem: {} with the file {} ...",
                 submission.problem_id, submission.problem_file
             );
-            let submission_url = send_submission(app, submission).await?;
+            let http_client = HttpClient::new().unwrap();
+            let submission_url = send_submission(app, submission, &http_client).await?;
 
             println!("👀 Watching submission ...\n");
-            watch_submission(app, &submission_url).await?;
+            watch_submission(&http_client, &submission_url).await?;
 
             if args.open {
                 webbrowser::open(&submission_url).wrap_err(format!(
@@ -118,7 +199,11 @@ pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
     }
 }
 
-pub async fn send_submission(app: &App, submission: Submission<'_>) -> Result<String, Report> {
+pub async fn send_submission(
+    app: &App,
+    submission: Submission<'_>,
+    http_client: &HttpClient,
+) -> Result<String, Report> {
     let login_url = check_change_hostname(app, &submission.problem_id, "login")?;
     let hostname = login_url
         .trim_start_matches("https://")
@@ -127,12 +212,12 @@ pub async fn send_submission(app: &App, submission: Submission<'_>) -> Result<St
         .ok_or_else(|| eyre::eyre!("🙀 Failed to extract hostname from URL"))?;
     let url = get_submit_url_from_hostname(hostname);
 
-    if !problem_exists(app, &submission.problem_id, hostname).await? {
+    if !problem_exists(http_client, &submission.problem_id, hostname).await? {
         // bail early if the problem does not exist
         eyre::bail!("🙀 Problem does not exist: {}", submission.problem_id);
     }
 
-    app.http_client.login(app, &login_url).await?;
+    http_client.login(app, &login_url).await?;
 
     let file_bytes = fs::read(&submission.problem_file_path)
         .wrap_err_with(|| format!("🙀 Failed to read file: {}", &submission.problem_file))?;
@@ -152,8 +237,7 @@ pub async fn send_submission(app: &App, submission: Submission<'_>) -> Result<St
         .text("script", "true")
         .part("sub_file[]", file);
 
-    let response = app
-        .http_client
+    let response = http_client
         .client
         .post(url)
         .multipart(form)
@@ -192,103 +276,81 @@ pub async fn send_submission(app: &App, submission: Submission<'_>) -> Result<St
         .captures(&body)
         .and_then(|cap| cap.name("ID"))
         .map(|m| m.as_str())
-        .ok_or_else(|| eyre::eyre!("🙀 Failed to get submission ID - got {}", body))?;
+        .ok_or_else(|| eyre::eyre!("🙀 Failed to get submission ID - got: {}", body))?;
 
     Ok(get_submissions_url_from_hostname(hostname, submission_id))
 }
 
-async fn watch_submission(app: &App, submission_url: &str) -> Result<(), Report> {
-    let mut running = false;
-    let mut current_stage = String::new();
-
-    let status_emoji = |status: &str| match status {
-        "New" => "🆕",
-        "Compiling" => "🔨",
-        "Running" => "🏃",
-        "Accepted" => "✅",
-        "Wrong Answer" => "❌",
-        _ => "🙀",
-    };
-
+async fn watch_submission(http_client: &HttpClient, submission_url: &str) -> Result<(), Report> {
     loop {
-        let submission_data = parse_submission_data(app, submission_url).await?;
+        let submission_data = parse_submission_data(http_client, submission_url).await?;
+        let sub_status = SubmissionStatus::from_str(&submission_data.status);
+        let emoji = sub_status.emoji();
 
         let num_tests = submission_data.tests.len();
         let mut emoji_bar = String::new();
 
-        if submission_data.status != current_stage {
-            current_stage = submission_data.status.clone();
-            print!(
-                "\rCurrent Stage: {} {} ...",
-                current_stage,
-                status_emoji(&current_stage)
-            );
+        if let SubmissionStatus::Setup(_) = sub_status {
+            print!("\rCurrent Stage: {} {} ...", submission_data.status, emoji);
             std::io::stdout()
                 .flush()
                 .wrap_err("🙀 Failed to flush stdout")?;
-            if current_stage.to_lowercase() == "running" {
-                running = true;
-            }
         }
+
         for (test_idx, test) in submission_data.tests.iter().enumerate() {
-            let emoji = match test.status.as_str() {
-                "Accepted" => "🟢",
-                "Wrong Answer" => "🔴",
-                _ => "⚪️",
-            };
-            emoji_bar.push_str(emoji);
-            if running {
+            let test_status = TestStatus::from_str(&test.status);
+
+            emoji_bar.push_str(test_status.emoji());
+            if let TestStatus::Running = test_status {
                 print!("\nTesting {}/{} {}", test_idx + 1, num_tests, emoji_bar);
-                running = false;
             } else {
                 print!("\rTesting {}/{} {}", test_idx + 1, num_tests, emoji_bar);
             }
             std::io::stdout()
                 .flush()
                 .wrap_err("🙀 Failed to flush stdout")?;
+
+            // Break if any of the tests fail as Kattis will not run the rest of the tests
+            if test_status.is_finished() {
+                break;
+            }
         }
 
-        // If the submission status is not "new, running or compiling" or the first test case fails, break the loop
-        // because they are the only statuses that indicate that the submission is still running - that I know of
-        if !["new", "running", "compiling"]
-            .contains(&submission_data.status.to_lowercase().as_str())
-            || (submission_data
-                .tests
-                .get(0)
-                .map_or(false, |test| test.status == "Wrong Answer"))
-        {
+        // If the submission status is not "new, running or compiling" or any test case fails, break the loop
+        if !sub_status.is_finished() {
             println!("\n");
 
-            if ["accepted", "wrong_answer"]
-                .contains(&submission_data.status.to_lowercase().as_str())
-            {
+            if ["Accepted", "Wrong answer"].contains(&submission_data.status.as_str()) {
                 println!(
                     "Final Status: {} {} - {} tests passed in - {}",
                     submission_data.status,
-                    status_emoji(&submission_data.status),
+                    sub_status.emoji(),
                     submission_data.testcases,
                     submission_data.cpu
                 );
+            } else if "Judge Error" == submission_data.status.as_str() {
+                println!("{} The unexpected happened Kattis returned a Judge Error - you should probably contact them!", 
+                sub_status.emoji());
             } else {
                 println!(
                     "The submission failed without being accepted or directly rejected - status: {} {}",
-                    submission_data.status, status_emoji(&submission_data.status)
+                    submission_data.status, sub_status.emoji()
                 );
             }
-            // print the final status along with how many tests passed out of the total as well as the cpu time
-
             break;
         }
-
+        // wait 0.25 seconds before checking the submission status again to avoid spamming the server
         tokio::time::sleep(std::time::Duration::from_secs_f32(0.25)).await;
     }
 
     Ok(())
 }
 
-async fn parse_submission_data(app: &App, submission_url: &str) -> Result<SubmissionData, Report> {
-    let response = app
-        .http_client
+async fn parse_submission_data(
+    http_client: &HttpClient,
+    submission_url: &str,
+) -> Result<SubmissionData, Report> {
+    let response = http_client
         .client
         .get(submission_url)
         .send()
