@@ -1,12 +1,11 @@
 use crate::{
     cli::Test,
     commands::submit::{send_submission, Submission},
-    utils::{find_problem_dir, find_test_files, get_problem_file},
+    utils::{find_problem_dir, find_test_files, get_problem_file, HttpClient},
     App,
 };
 
 use std::{
-    collections::HashMap,
     fs::{self, File},
     io,
     path::{Path, PathBuf},
@@ -18,6 +17,8 @@ use color_eyre::{
     Report,
 };
 
+use colored::Colorize;
+
 pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
     let (problem_file, problem_file_path, language) =
@@ -25,8 +26,13 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
     let tests = find_test_files(app, &args.test_cases, &problem_path)?;
 
     println!(
-        "🧪 Testing problem: {} with the file {} ...\n",
-        problem_id, &problem_file
+        "{}",
+        format!(
+            "🧪 Testing problem: {} with the file {} ...\n",
+            problem_id, &problem_file
+        )
+        .bold()
+        .bright_blue()
     );
 
     let passed = test_problem(
@@ -36,11 +42,9 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
         &problem_file_path,
         tests,
         &language,
-    )
-    .await?;
+    )?;
 
     if passed {
-        println!("🏁 All tests passed!");
         if args.submit {
             let submit = dialoguer::Select::new()
                 .with_prompt("Do you want to submit this file?")
@@ -60,26 +64,33 @@ pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
                         .to_string(),
                     problem_file_path: problem_file_path.to_path_buf(),
                 };
-                send_submission(app, submission).await?;
+                let http_client = HttpClient::new().unwrap();
+                send_submission(app, submission, &http_client).await?;
             } else {
                 println!("🙀 Submission aborted");
             }
         }
-    } else if app.args.verbose {
-        println!("❌ Some tests seem to have failed!");
+    } else if app.args.verbose.log_level().is_some() {
+        println!("{}", "❌ Some tests seem to have failed!".bright_red());
+    } else if app.args.verbose.is_silent() {
+        // print nothing as user has specified --quiet
     } else {
-        println!("❌ Some tests seem to have failed, try re-running the tests, with --verbose!");
+        println!(
+            "{}",
+            "❌ Some tests seem to have failed, try re-running the tests, with the verbose flag!"
+                .bright_red()
+        );
     }
 
     Ok(())
 }
 
-pub async fn test_problem(
+pub fn test_problem(
     app: &App,
     problem_id: &str,
     problem_path: &Path,
     problem_file_path: &Path,
-    tests: HashMap<PathBuf, PathBuf>,
+    tests: Vec<(PathBuf, PathBuf)>,
     language: &str,
 ) -> Result<bool, Report> {
     let config = &app.config.kat_config;
@@ -93,10 +104,11 @@ pub async fn test_problem(
 
     if !compile_command.is_empty() {
         println!("🔨 Compiling problem: {} ...", problem_id);
-        compile_problem(app, compile_command, problem_path, problem_file_path)?;
+        compile_problem(compile_command, problem_path, problem_file_path)?;
     }
 
     let mut all_tests_passed = true;
+    let start_time = std::time::Instant::now();
     for single_test in tests {
         if let Err(e) = execute_problem(
             app,
@@ -106,15 +118,16 @@ pub async fn test_problem(
             single_test,
         ) {
             all_tests_passed = false;
-            eprintln!("Error: {}", e);
+            println!("{e}");
         }
     }
+    let elapsed_time = format!("{:.2}", start_time.elapsed().as_secs_f64());
+    println!("{}",format!("🏁 All tests passed in {}s!", elapsed_time).bright_green());
 
     Ok(all_tests_passed)
 }
 
 fn compile_problem(
-    _app: &App,
     compile_command: &str,
     problem_path: &Path,
     problem_file_path: &Path,
@@ -170,6 +183,7 @@ fn execute_problem(
         .to_string();
     let input_file = File::open(input_file_path.clone())?;
 
+    let start_time = std::time::Instant::now();
     let output = Command::new(execute_cmd)
         .args(&execute_args)
         .stdin(input_file)
@@ -180,32 +194,59 @@ fn execute_problem(
             }
             _ => eyre::eyre!("🙀 Failed to execute command with error: {}", e),
         })?;
+        let elapsed_time = format!("{:.2}", start_time.elapsed().as_secs_f64());
 
     if !output.status.success() {
         // print all output
-        println!("Output: {}", String::from_utf8_lossy(&output.stdout));
-        println!("Error: {}", String::from_utf8_lossy(&output.stderr));
-        eyre::bail!(
+        println!(
+            "{}",
+            format!("Output: {}", String::from_utf8_lossy(&output.stdout)).bold()
+        );
+        println!(
+            "{}",
+            format!("Error: {}", String::from_utf8_lossy(&output.stderr)).bold()
+        );
+        eyre::bail!(format!(
             "🙀 Failed to execute problem: {}",
             problem_file_path.display()
-        );
+        )
+        .bright_red());
     }
 
     // Compare the output of the program to the expected output
     let expected_output = fs::read_to_string(expected_output_file_path)?;
     let actual_output = String::from_utf8_lossy(&output.stdout).into_owned();
     if actual_output != expected_output {
-        if app.args.verbose {
-            Err(eyre::eyre!(
-                "❌ Test {input_file_name} failed!\nExpected output: {}\nActual output: {}",
-                expected_output,
-                actual_output
-            ))
-        } else {
-            Err(eyre::eyre!("❌ Test {input_file_name} failed!"))
+        match app.args.verbose.log_level() {
+            Some(log::Level::Error) | None => {
+                eyre::bail!(
+                    "{}",
+                    format!("❌ Test {input_file_name} failed!").bright_red()
+                )
+            }
+            Some(_) => {
+                let stderr_output = String::from_utf8_lossy(&output.stderr);
+                let error_output = if !String::from_utf8_lossy(&output.stderr).is_empty() {
+                    format!("\nError output: {}\n", stderr_output)
+                } else {
+                    String::new()
+                };
+                eyre::bail!(
+                    "{}{}",
+                    format!("❌ Test {input_file_name} failed!\n").bright_red(),
+                    format!(
+                        "Expected output: {}\nActual output: {}{}",
+                        expected_output, actual_output, error_output,
+                    )
+                    .bold()
+                )
+            }
         }
     } else {
-        println!("✅ Test {} passed!", input_file_name);
+        println!(
+            "{}",
+            format!("✅ Test {} passed in {}s!", input_file_name, elapsed_time).bright_green()
+        );
         Ok(())
     }
 }
