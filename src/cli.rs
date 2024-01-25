@@ -1,42 +1,38 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, ValueHint};
+use clap_verbosity_flag::Verbosity;
 
 pub fn parse_cli() -> Cli {
     Cli::parse()
 }
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const AUTHOR: &str = env!("CARGO_PKG_AUTHORS");
+const WELCOME: &str = concat!("Welcome to kat! - v", env!("CARGO_PKG_VERSION"), "\n");
 
 #[derive(Parser, Debug)]
 #[command(
-    author = AUTHOR,
-    version = VERSION,
-    about = format!("Welcome to kat! - v{VERSION}\n
-kat is a CLI tool for getting, submitting, testing and interacting with the programming problem solving website kattis.
+    author,
+    version,
+    about = format!("{WELCOME}
+kat is a CLI tool for getting, submitting, testing and interacting with the programming problem solving website Kattis.
 To get started have a look at the commands below, or run `kat help <COMMAND>` for more information about a specific command."),
 )]
 pub struct Cli {
     #[command(subcommand)]
     pub subcommand: Commands,
 
-    #[arg(
-        short,
-        long,
-        help = "If set, enables verbose output, which prints more information to the terminal.",
-        default_value_t = false,
-        global = true
-    )]
-    pub verbose: bool,
+    #[command(flatten)]
+    pub verbose: Verbosity,
 }
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    #[command(about = "Configure kat")]
+    #[command(about = "Commands to help you configure kat")]
     Config(Config),
     #[command(about = "Get a problem from kattis")]
     Get(Get),
+    #[command(about = "Initialise the configuration files")]
+    Init(Init),
     #[command(about = "Open a problem in the browser")]
     Open(Open),
     #[command(about = "Submit a problem to kattis")]
@@ -57,8 +53,6 @@ pub struct Config {
 
 #[derive(Subcommand, Debug)]
 pub enum ConfigCommands {
-    #[command(about = "Initialise the configuration files.")]
-    Init,
     #[command(about = "Locate the configuration files.")]
     Locate,
     #[command(about = "Set the location of where the configuration files are stored.")]
@@ -95,6 +89,23 @@ If not specified, the language will be determined default language in the config
 }
 
 #[derive(Args, Debug)]
+pub struct Init {
+    #[arg(
+        help = "Shortcut to specify which files to download. Options are 'all' or 'config'. 
+'config' will only download the config file, while 'all' will download all available config files.
+If not specified, you will be prompted to choose which files."
+    )]
+    pub choice: Option<String>,
+    #[arg(
+        short,
+        long,
+        default_value_t = false,
+        help = "If set, you will not be prompted to confirm whether you want to overwrite existing config files."
+    )]
+    pub yes: bool,
+}
+
+#[derive(Args, Debug)]
 pub struct Open {
     #[arg(help = "The id of the problem you want to open in the browser.")]
     pub problem: Option<String>,
@@ -105,7 +116,7 @@ pub struct Submit {
     #[arg(
         default_value = ".",
         value_hint = ValueHint::DirPath,
-        help = "The path of the problem (folder) you want to submit."
+        help = "The path of the problem (folder) you want to submit. By default, the current directory is used."
     )]
     pub path: PathBuf,
     #[arg(
