@@ -30,9 +30,13 @@ pub fn get_submit_url_from_hostname(host_name: &str) -> String {
     format!("https://{}/submit", host_name)
 }
 
-pub async fn problem_exists(app: &App, problem: &str, hostname: &str) -> Result<bool, Report> {
+pub async fn problem_exists(
+    http_client: &HttpClient,
+    problem: &str,
+    hostname: &str,
+) -> Result<bool, Report> {
     let problem_url = get_problem_url_from_hostname(problem, hostname);
-    let response = app.http_client.client.get(&problem_url).send().await?;
+    let response = http_client.client.get(&problem_url).send().await?;
 
     match response.status() {
         StatusCode::OK => Ok(true),
@@ -129,10 +133,7 @@ impl HttpClient {
         } else if status == StatusCode::FORBIDDEN {
             eyre::bail!("🙀 Invalid username or token - please check your credentials in the kattisrc file!")
         } else {
-            eyre::bail!(
-                "🙀 Failed to login to kattis, error: {}",
-                status,
-            )
+            eyre::bail!("🙀 Failed to login to kattis, error: {}", status,)
         }
     }
 }
