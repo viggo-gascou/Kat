@@ -1,3 +1,5 @@
+use crate::App;
+
 use std::{
     cmp::Ordering,
     collections::HashMap,
@@ -11,9 +13,10 @@ use color_eyre::{
     eyre::{Context, ContextCompat},
     Report,
 };
-use glob::glob;
 
-use crate::App;
+use colored::Colorize;
+use glob::glob;
+use regex::Regex;
 
 pub fn get_problem_dir(_app: &App, problem: &str) -> Result<PathBuf, Report> {
     let current_dir = std::env::current_dir().wrap_err("🙀 Failed to get current directory")?;
@@ -50,18 +53,22 @@ pub fn copy_template(
         None => &config.default.language,
     };
 
-    let template_path = match config.languages.get(language) {
-        Some(lang) => {
-            if let Some(template_file) = &lang.template {
-                // join the template file with the template directory to get the full path to the template file
-                Some(template_dir.join(template_file))
-            } else {
-                println!("🙀 No template file found for language: {}", language);
-                None
-            }
+    // safe since language gets set to a value no matter what
+    let template_path = match &config.languages[language].template {
+        Some(template_file) => {
+            // join the template file with the template directory to get the full path to the template file
+            Some(template_dir.join(template_file))
         }
         None => {
-            println!("🙀 No template file found for language: {}", language);
+            log::warn!(
+                "{}",
+                format!(
+                    "🙀 Warning: No template file found for language: {}",
+                    language
+                )
+                .bold()
+                .bright_yellow()
+            );
             None
         }
     };
@@ -76,28 +83,28 @@ pub fn copy_template(
         }
         let template_file_name = template_path
             .file_name()
-            .wrap_err("🙀 Failed to get file name from path")?;
+            .wrap_err("🙀 Failed to get file name from path")?
+            .to_str()
+            .wrap_err("🙀 Failed to convert file name to string")?
+            .to_string();
         let template_file_no_ext = template_path
             .file_stem()
             .wrap_err("🙀 Failed to get file name from path")?
             .to_str()
             .wrap_err("🙀 Failed to convert file name to string")?
-            .to_string();
-        let template_file_name = template_file_name
-            .to_str()
-            .wrap_err("🙀 Failed to convert file name to string")?
-            .to_string();
+            .to_string();            
 
         // strip the subdomain from the problem id
         if problem.contains('.') {
             problem = problem.split('.').nth(1).unwrap();
         }
         let problem_file_name = template_file_name.replace(&template_file_no_ext, problem);
-        let problem_file_path = problem_dir.join(problem_file_name);
+        let problem_file_path = problem_dir.join(&problem_file_name);
 
         let template_file = fs::read_to_string(&template_path)
             .wrap_err("🙀 Failed to open template file for reading")?
-            .replace("{source_file_no_ext}", problem);
+            .replace("{source_file_no_ext}", problem)
+            .replace("{source_file}", &problem_file_name.clone());
 
         fs::write(problem_file_path, template_file)
             .wrap_err("🙀 Failed to create template file in problem directory")?;
@@ -133,7 +140,7 @@ pub fn find_test_files(
     _app: &App,
     test_cases: &Option<String>,
     problem_path: &Path,
-) -> Result<HashMap<PathBuf, PathBuf>, Report> {
+) -> Result<Vec<(PathBuf, PathBuf)>, Report> {
     let extensions = ["in", "ans"];
     let test_path = problem_path.join("tests");
     if !test_path.exists() {
@@ -152,18 +159,13 @@ pub fn find_test_files(
 
     for extension in extensions {
         let pattern = format!("{test_path}/*.{}", &extension);
-        let mut files = glob(&pattern)
+        let files = glob(&pattern)
             .expect("🙀 Failed to read glob pattern")
             .filter_map(Result::ok)
             .collect::<Vec<PathBuf>>();
 
-        // Sort files by their stem i.e., the number
-        files.sort_by_key(|path| {
-            path.file_stem()
-                .and_then(|stem| stem.to_str())
-                .and_then(|s| s.parse::<u32>().ok())
-                .unwrap_or(0)
-        });
+        // glob seems to return files in alphabetical order -> rust-lang/glob/issues/98
+        // so no need for sorting
 
         let matching_files = if filter == "all" {
             files
@@ -172,14 +174,22 @@ pub fn find_test_files(
             files
                 .into_iter()
                 .filter(|file| {
-                    let file_name: u32 = file
+                    let file_name = file
                         .file_stem()
                         .expect("🙀 Failed to get file name from path")
                         .to_str()
-                        .expect("🙀 Failed to convert file name to string")
+                        .expect("🙀 Failed to convert file name to string");
+
+                    let re = Regex::new(r"\d+").unwrap();
+                    let number_part = re
+                        .find(file_name)
+                        .expect("🙀 No number found in file name")
+                        .as_str();
+                    let file_number: u32 = number_part
                         .parse()
-                        .expect("🙀 File name is not a valid number");
-                    test_filter.contains(&file_name)
+                        .expect("🙀 File name does not contain a valid number");
+
+                    test_filter.contains(&file_number)
                 })
                 .collect::<Vec<PathBuf>>()
         };
@@ -205,9 +215,9 @@ pub fn find_test_files(
                         };
                         eyre::bail!("🙀 No {file_type} files found in directory: {test_path}");
                     }
-                    let mut test_files = HashMap::new();
+                    let mut test_files = Vec::new();
                     for (in_file, ans_file) in in_files.iter().zip(ans_files.iter()) {
-                        test_files.insert(in_file.clone(), ans_file.clone());
+                        test_files.push((in_file.clone(), ans_file.clone()));
                     }
                     Ok(test_files)
                 }
@@ -250,7 +260,15 @@ pub fn get_problem_file(
     // if args.file is not set, try to find a file with the same name as the problem id
     // that has a matching extension from default language set in the config
     // if multiple files are found, prompt the user to choose which one to use
-    println!("🔍 Looking for problem file ...\n");
+    log::info!(
+        "{}",
+        format!(
+            "🔍 Looking for problem file for the problem {}...\n",
+            problem_id
+        )
+        .bold()
+        .bright_blue()
+    );
     let config = &app.config.kat_config;
     let language = match &language {
         Some(lang) => {
@@ -340,16 +358,23 @@ pub fn find_problem_dir(_app: &App, path: &Path) -> Result<(PathBuf, String), Re
             .to_str()
             .wrap_err("🙀 Failed to convert file name to string")?
             .to_string();
-        println!(
-            "📂 Using current directory as problem path for the problem {}\n",
-            problem_id
+
+        log::info!(
+            "{}",
+            format!(
+                "📂 Using current directory as problem path for the problem {}\n",
+                problem_id
+            )
+            .bold()
+            .bright_blue()
         );
         Ok((current_dir, problem_id))
     } else {
-        let mut problem_path = current_dir.join(path);
-        if path.is_absolute() {
-            problem_path = path.to_path_buf();
-        }
+        let problem_path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            current_dir.join(path)
+        };
         let problem_id = problem_path
             .file_name()
             .expect("🙀 Failed to get file name from path")
@@ -358,11 +383,12 @@ pub fn find_problem_dir(_app: &App, path: &Path) -> Result<(PathBuf, String), Re
             .to_string();
 
         if problem_path.exists() {
-            println!(
+            log::info!(
                 "📂 Using {} as the problem path, for the problem {}\n",
                 problem_path.display(),
                 problem_id
             );
+
             Ok((problem_path, problem_id))
         } else {
             eyre::bail!(
