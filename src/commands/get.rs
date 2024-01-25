@@ -1,14 +1,17 @@
 use crate::{
     cli::Get,
     utils::fileutils::{copy_template, get_problem_dir, get_test_dir},
-    utils::webutils::{
-        check_change_hostname, get_sample_url_from_problem_url, is_problem_id, problem_exists,
+    utils::{
+        webutils::{
+            check_change_hostname, get_sample_url_from_problem_url, is_problem_id, problem_exists,
+        },
+        HttpClient,
     },
     App,
 };
 
 use std::{
-    fs::{self},
+    fs,
     io::Write,
 };
 
@@ -26,7 +29,9 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
         .next()
         .ok_or_else(|| eyre::eyre!("🙀 Failed to extract hostname from URL"))?;
 
-    if !problem_exists(app, problem, hostname).await? {
+    let http_client = HttpClient::new().unwrap();
+
+    if !problem_exists(&http_client, problem, hostname).await? {
         eyre::bail!("🙀 Problem {} does not exist!", problem);
     }
 
@@ -57,7 +62,7 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
 
     println!("📥 Fetching problem {} from {}...", problem, url);
 
-    fetch_tests(app, problem, &url).await?;
+    fetch_tests(app, problem, &url, &http_client).await?;
 
     println!("📝 Creating template file for problem {}...", problem);
 
@@ -68,11 +73,16 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
     Ok(())
 }
 
-async fn fetch_tests(app: &App, problem: &str, problem_url: &str) -> Result<(), Report> {
+async fn fetch_tests(
+    app: &App,
+    problem: &str,
+    problem_url: &str,
+    http_client: &HttpClient,
+) -> Result<(), Report> {
     let sample_url = get_sample_url_from_problem_url(problem_url);
     let mut tmpfile = tempfile::tempfile().wrap_err("🙀 Failed to create temporary file")?;
 
-    let mut response = app.http_client.client.get(&sample_url).send().await?;
+    let mut response = http_client.client.get(&sample_url).send().await?;
 
     match response.status() {
         reqwest::StatusCode::OK => {
