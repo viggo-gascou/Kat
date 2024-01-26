@@ -1,4 +1,4 @@
-use std::{fs, io::Write, path::PathBuf};
+use std::{collections::HashSet, fs, path::PathBuf};
 
 use crate::{
     cli::Submit,
@@ -16,6 +16,7 @@ use color_eyre::{
     Report,
 };
 
+use indicatif::{ProgressBar, ProgressStyle};
 use regex::Regex;
 use reqwest::multipart::{Form, Part};
 use scraper::{Html, Selector};
@@ -115,18 +116,6 @@ impl TestStatus {
             "Wrong Answer" => Self::Failed,
             _ => Self::Running,
         }
-    }
-
-    fn emoji(&self) -> &str {
-        match self {
-            Self::Accepted => "🟢",
-            Self::Failed => "🔴",
-            Self::Running => "⚪",
-        }
-    }
-
-    fn is_finished(&self) -> bool {
-        matches!(self, Self::Accepted | Self::Failed)
     }
 }
 
@@ -282,42 +271,47 @@ pub async fn send_submission(
 }
 
 async fn watch_submission(http_client: &HttpClient, submission_url: &str) -> Result<(), Report> {
+    let (term_width, _) = termion::terminal_size().unwrap();
+    let mut completed_tests: HashSet<String> = HashSet::new();
+    let pb = ProgressBar::new(0);
+
     loop {
         let submission_data = parse_submission_data(http_client, submission_url).await?;
         let sub_status = SubmissionStatus::from_str(&submission_data.status);
-        let emoji = sub_status.emoji();
+        let num_tests = submission_data.tests.len() as u64;
 
-        let num_tests = submission_data.tests.len();
-        let mut emoji_bar = String::new();
+        let pb = configure_progress_bar(&pb, &submission_data, num_tests, term_width);
 
-        if let SubmissionStatus::Setup(_) = sub_status {
-            print!("\rCurrent Stage: {} {} ...", submission_data.status, emoji);
-            std::io::stdout()
-                .flush()
-                .wrap_err("🙀 Failed to flush stdout")?;
-        }
-
-        for (test_idx, test) in submission_data.tests.iter().enumerate() {
-            let test_status = TestStatus::from_str(&test.status);
-
-            emoji_bar.push_str(test_status.emoji());
-            if let TestStatus::Running = test_status {
-                print!("\nTesting {}/{} {}", test_idx + 1, num_tests, emoji_bar);
-            } else {
-                print!("\rTesting {}/{} {}", test_idx + 1, num_tests, emoji_bar);
-            }
-            std::io::stdout()
-                .flush()
-                .wrap_err("🙀 Failed to flush stdout")?;
-
-            // Break if any of the tests fail as Kattis will not run the rest of the tests
-            if test_status.is_finished() {
-                break;
+        if pb.position() < num_tests as u64 {
+            for test in &submission_data.tests {
+                let test_status = TestStatus::from_str(&test.status);
+                if !completed_tests.contains(&test.number) {
+                    match test_status {
+                        TestStatus::Accepted => {
+                            completed_tests.insert(test.number.clone());
+                            pb.inc(1);
+                            pb.set_message(format!("{}/{}", pb.position(), num_tests));
+                            if pb.position() == num_tests as u64 {
+                                pb.finish();
+                                break;
+                            }
+                        }
+                        TestStatus::Failed => {
+                            // would be nice to show the failed test case in the progress bar - not currently possible afaik
+                            pb.set_prefix("Failure: ");
+                            pb.abandon_with_message("😿 A test failed!");
+                            break;
+                        }
+                        TestStatus::Running => {
+                            // Nothing to do since the test is still running
+                        }
+                    }
+                }
             }
         }
 
         // If the submission status is not "new, running or compiling" or any test case fails, break the loop
-        if !sub_status.is_finished() {
+        if sub_status.is_finished() {
             println!("\n");
 
             if ["Accepted", "Wrong answer"].contains(&submission_data.status.as_str()) {
@@ -463,4 +457,42 @@ async fn parse_submission_data(
     }
 
     Ok(submission_data)
+}
+
+fn configure_progress_bar(
+    pb: &ProgressBar,
+    submission_data: &SubmissionData,
+    num_tests: u64,
+    term_width: u16,
+) -> ProgressBar {
+    let sub_status = SubmissionStatus::from_str(&submission_data.status);
+
+    if let SubmissionStatus::Setup(_) = sub_status {
+        pb.set_prefix(format!(
+            "Current Stage: {} {}",
+            submission_data.status,
+            sub_status.emoji(),
+        ));
+    } else {
+        pb.set_prefix("Testing: ");
+    }
+
+    pb.set_length(num_tests);
+
+    // If the terminal width is less than the number of tests * 2 (since each emoji takes up 2 characters),
+    // we set the bar width to half the terminal width
+    let bar_width = if term_width >= (num_tests * 2) as u16 {
+        num_tests * 2
+    } else {
+        (term_width / 2).into()
+    };
+
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template(&format!("{{prefix:.bold}}{{msg}} {{bar:{}}}", bar_width))
+            .unwrap()
+            .progress_chars("🟢⚪"),
+    );
+
+    pb.clone()
 }
