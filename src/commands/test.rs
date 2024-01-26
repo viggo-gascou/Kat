@@ -122,15 +122,17 @@ pub fn test_problem(
         }
     }
     let elapsed_time = format!("{:.2}", start_time.elapsed().as_secs_f64());
-    println!(
-        "{}",
-        format!(
-            "🏁 All tests for {} passed in {}s!",
-            problem_id.underline(),
-            elapsed_time
-        )
-        .bright_green()
-    );
+    if all_tests_passed {
+        println!(
+            "{}",
+            format!(
+                "🏁 All tests for {} passed in {}s!",
+                problem_id.underline(),
+                elapsed_time
+            )
+            .bright_green()
+        );
+    }
 
     Ok(all_tests_passed)
 }
