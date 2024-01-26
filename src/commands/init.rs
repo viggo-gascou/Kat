@@ -127,10 +127,13 @@ async fn download_sample_files(config_dir: &Path, args: &Init) -> Result<(), Rep
                 // If "Choose" is selected, let the user choose specific files
                 let file_names: Vec<&str> = files.iter().map(|file| file.name.as_str()).collect();
                 let selections = dialoguer::MultiSelect::new()
-                    .with_prompt("Select the template files you want to download")
+                    .with_prompt("Select the template files you want to download (use space to select, enter to finish)")
                     .items(&file_names[..])
                     .interact()
                     .unwrap();
+                if selections.is_empty() {
+                    eyre::bail!("No files selected - if this was a mistake - please run `kat init` again and and use the space bar to select items, then press enter to finish.");
+                }
                 selections
                     .iter()
                     .map(|&i| files[i].clone())
