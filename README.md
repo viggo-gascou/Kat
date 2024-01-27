@@ -33,11 +33,11 @@ well.
 
 ### From source
 
-To install **`kat`** from source you need to have rust installed. You can
-install rust by following the instructions
+To install **`kat`** from source you need to have Rust installed. You can
+install Rust by following the instructions
 [here](https://www.rust-lang.org/tools/install).
 
-Once you have rust installed you can install **`kat`** by running the following
+Once you have Rust installed you can install **`kat`** by running the following
 command:
 
 ```bash
