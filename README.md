@@ -1,6 +1,6 @@
 # kat
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/viggo-gascou/kat-rs/release)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/viggo-gascou/kat-rs/build-release.yml)
 ![GitHub Release](https://img.shields.io/github/v/release/viggo-gascou/kat-rs)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/viggo-gascou/kat-rs/total)
 ![GitHub License](https://img.shields.io/github/license/viggo-gascou/kat-rs)
