@@ -1,4 +1,4 @@
-name: Build and release kat to release
+name: Build and release kat
 
 on:
   release:
