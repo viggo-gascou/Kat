@@ -1,6 +1,6 @@
 use clap::CommandFactory;
 use clap_complete::{
-    generate_to, Shell::Bash, Shell::Elvish, Shell::Fish, Shell::PowerShell, Shell::Zsh,
+    generate_to, Shell::Bash, Shell::Elvish, Shell::Fish, Shell::Zsh,
 };
 use std::{env, error::Error};
 
@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut cmd = Cli::command();
 
-    let shells = [Bash, Zsh, Fish, Elvish, PowerShell];
+    let shells = [Bash, Zsh, Fish, Elvish];
 
     for &shell in shells.iter() {
         generate_to(shell, &mut cmd, "kat", &outdir)?;
