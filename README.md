@@ -24,12 +24,40 @@ out how to do certain things in Rust.
 
 ## Installation
 
-For now, you can install **`kat`** from source. I plan to release binaries for
-Linux, MacOS, and Windows in the future as well as a Homebrew formula for MacOS,
-once I have a stable release.
+You can install **`kat`** in two different ways. You can install it using
+[the binaries](#from-binaries) provided in the
+releases section of this repository or [from source](#from-source).
 
-I have only tested this on MacOS, but it should work on Linux and Windows as
-well.
+<ins>**Please note:**</ins> That **`kat`** (for now) is only supported on Linux and MacOS.
+While **`kat`** is not officially supported on Windows, it may still work if you
+compile it from source. Please refer to the [from source](#from-source) section
+for instructions on how to do this.
+
+<!--### Homebrew
+
+To install **`kat`** using homebrew by running the following command:
+
+```bash
+brew install viggo-gascou/kat-rs
+```
+-->
+
+### From binaries
+
+To install **`kat`** using the binaries provided in the releases
+section of this repository. You can find the latest release
+[here](https://github.com/viggo-gascou/kat-rs/releases/latest). For linux and
+macos you can install the binary by using the download script:
+
+```bash
+curl -s https://raw.githubusercontent.com/viggo-gascou/kat-rs/main/scripts/download-latest.sh | bash
+```
+
+Then adding the binary to a folder in your path. For example:
+
+```bash
+mv kat /usr/local/bin/kat
+```
 
 ### From source
 
@@ -58,12 +86,9 @@ kat init
 ```
 
 This will prompt you to download the sample config file and templates and place
-it in the default config directory, that is `$HOME/.kat` on Linux and MacOS and
-`{FOLDERID_Profile}\.kat` on Windows.
-
-For example on Windows this would be `C:\Users\<username>\.kat` and on Linux and
-MacOS it would be `/home/<username>/.kat`. You can change and locate the config
-location by using the config subcommand [below](#configuring-kat).
+it in the default config directory, that is `$HOME/.kat` on Linux and MacOS.
+You can change and locate the config location by using the config subcommand
+[below](#configuring-kat).
 
 ### Getting a problem
 
