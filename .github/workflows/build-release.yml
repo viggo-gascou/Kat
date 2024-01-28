@@ -40,13 +40,18 @@ jobs:
         run: rustup target add ${{ matrix.target }}
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }} --out-dir release
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Rename binary with version
-        run: mv release/kat release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}
+        run: mv target/release/kat target/release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}
 
       - name: Get sha256
-        run: sha256sum release/kat > kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
+        run: |
+          if [[ "$(uname)" == "Darwin" ]]; then
+            shasum -a 256 target/release/kat > target/release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
+          else
+            sha256sum target/release/kat > target/release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
+          fi
 
       - name: Upload artifacts
         uses: svenstaro/upload-release-action@v2
