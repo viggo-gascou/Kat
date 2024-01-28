@@ -24,30 +24,35 @@ out how to do certain things in Rust.
 
 ## Installation
 
-You can install **`kat`** in two different ways. You can install it using
-[the binaries](#from-binaries) provided in the
+You can install **`kat`** in three different ways. You can install it using
+[homebrew](#homebrew), [the binaries](#from-binaries) provided in the
 releases section of this repository or [from source](#from-source).
 
-<ins>**Please note:**</ins> That **`kat`** (for now) is only supported on Linux and MacOS.
-While **`kat`** is not officially supported on Windows, it may still work if you
-compile it from source. Please refer to the [from source](#from-source) section
-for instructions on how to do this.
+<ins>**Please note:**</ins> That **`kat`** (for now) is only supported on Linux
+and MacOS. While **`kat`** is not officially supported on Windows, it may still
+work if you compile it from source. Please refer to the
+[from source](#from-source) section for instructions on how to do this.
 
-<!--### Homebrew
+### Homebrew
 
 To install **`kat`** using homebrew by running the following command:
 
 ```bash
-brew install viggo-gascou/kat-rs
+brew install viggo-gascou/tap/kat-rs
 ```
--->
+
+Or by adding the tap and then installing **`kat`**:
+
+```bash
+brew tap viggo-gascou/tap
+brew install kat-rs
+```
 
 ### From binaries
 
 To install **`kat`** using the binaries provided in the releases
-section of this repository. You can find the latest release
-[here](https://github.com/viggo-gascou/kat-rs/releases/latest). For linux and
-macos you can install the binary by using the download script:
+section of this repository. You can download the latest release by running the
+following command:
 
 ```bash
 curl -s https://raw.githubusercontent.com/viggo-gascou/kat-rs/main/scripts/download-latest.sh | bash
@@ -58,6 +63,9 @@ Then adding the binary to a folder in your path. For example:
 ```bash
 mv kat /usr/local/bin/kat
 ```
+
+Older releases can always be found here
+[here](https://github.com/viggo-gascou/kat-rs/releases).
 
 ### From source
 
