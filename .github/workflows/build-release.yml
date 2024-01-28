@@ -45,14 +45,14 @@ jobs:
       - name: Rename binary with version
         run: | 
           mkdir release
-          mv target/${{ matrix.target }}/release release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}
+          mv target/${{ matrix.target }}/release/kat release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}
 
       - name: Get sha256
         run: |
           if [[ "$(uname)" == "Darwin" ]]; then
-            shasum -a 256 release/kat > release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
+            shasum -a 256 release/release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }} > release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
           else
-            sha256sum release/kat > release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
+            sha256sum release/release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }} > release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
           fi
 
       - name: Upload artifacts
