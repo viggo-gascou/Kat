@@ -24,11 +24,10 @@ pub struct InternalConfig {
 
 impl InternalConfig {
     pub fn new() -> Result<Self, Report> {
-        let mut internal_config_path =
-            data_dir().wrap_err("🙀 Failed to determine data directory")?;
-
-        internal_config_path.push("kat");
-        internal_config_path.push("internal_config.toml");
+        let internal_config_path = data_dir()
+            .wrap_err("🙀 Failed to determine data directory")?
+            .join("kat")
+            .join("internal_config.toml");
 
         if !internal_config_path.exists() {
             // Create the config directory
