@@ -61,7 +61,7 @@ curl -s https://raw.githubusercontent.com/viggo-gascou/kat-rs/main/scripts/downl
 Then adding the binary to a folder in your path. For example:
 
 ```bash
-mv kat /usr/local/bin/kat
+mv kat-$(uname)-$(uname -m) /usr/local/bin/kat
 ```
 
 Older releases can always be found here
