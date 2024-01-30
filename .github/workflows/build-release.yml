@@ -87,7 +87,9 @@ jobs:
           cp 'target/${{ matrix.target }}/release/build/${{ env.PROJECT_NAME }}-'*/'out/_${{ env.PROJECT_NAME }}' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/completions/'
           cp 'target/${{ matrix.target }}/release/build/${{ env.PROJECT_NAME }}-'*/'out/${{ env.PROJECT_NAME }}.fish' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/completions/'
           # compress package
-          tar czf '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_NAME }}' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}'/*
+          pushd '${{ steps.vars.outputs.PKG_DIR }}/' >/dev/null
+          tar czf '${{ steps.vars.outputs.PKG_NAME }}' '${{ steps.vars.outputs.PKG_BASENAME }}'/*
+          popd >/dev/null
       
       - name: Publish
         uses: softprops/action-gh-release@v1
