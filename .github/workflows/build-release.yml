@@ -58,7 +58,7 @@ jobs:
           echo set-output name=PKG_DIR::${PKG_DIR}
           echo ::set-output name=PKG_DIR::${PKG_DIR}
           
-          VERSION=v$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
+          VERSION=${GITHUB_REF#refs/*/}
           echo set-output name=VERSION::${VERSION}
           echo ::set-output name=VERSION::${VERSION}
           
