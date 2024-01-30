@@ -1,5 +1,3 @@
-use std::{collections::HashSet, fs, path::PathBuf};
-
 use crate::{
     cli::Submit,
     commands::test::test_problem,
@@ -11,8 +9,11 @@ use crate::{
     App,
 };
 
+use std::{collections::HashSet, fs, path::PathBuf};
+
 use color_eyre::{
     eyre::{self, Context, ContextCompat},
+    owo_colors::OwoColorize,
     Report,
 };
 
@@ -59,6 +60,7 @@ enum SubmissionStatus {
 
 impl SubmissionStatus {
     fn from_str(status: &str) -> Self {
+        let re = Regex::new(r"^Accepted\((\d{1,2})\)$").unwrap();
         match status {
             "New" | "Compiling" => Self::Setup(status.to_string()),
             "Running" => Self::Running,
@@ -70,7 +72,13 @@ impl SubmissionStatus {
             | "Output Limit Exceeded"
             | "Wrong Answer"
             | "Judge Error" => Self::Failed(status.to_string()),
-            _ => Self::Unknown,
+            _ => {
+                if re.is_match(status) {
+                    Self::Failed(status.to_string())
+                } else {
+                    Self::Unknown
+                }
+            }
         }
     }
 
@@ -135,8 +143,12 @@ pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
         if args.test_first {
             let tests = find_test_files(app, &Some("all".to_string()), &problem_path)?;
             println!(
-                "👀 Testing the file {} for the problem {} ...\n",
-                &problem_file, problem_id
+                "{}",
+                format!(
+                    "👀 Testing the file {} for the problem {} ...\n",
+                    &problem_file, problem_id
+                )
+                .bright_blue()
             );
             if !test_problem(
                 app,
@@ -164,13 +176,17 @@ pub async fn submit(app: &App, args: &Submit) -> Result<(), Report> {
 
         if should_submit {
             println!(
-                "🚀 Submitting problem: {} with the file {} ...",
-                submission.problem_id, submission.problem_file
+                "{}",
+                format!(
+                    "🚀 Submitting problem: {} with the file {} ...",
+                    submission.problem_id, submission.problem_file
+                )
+                .bright_blue()
             );
             let http_client = HttpClient::new().unwrap();
             let submission_url = send_submission(app, submission, &http_client).await?;
 
-            println!("👀 Watching submission ...\n");
+            println!("{}", "👀 Watching submission ...\n".bright_blue());
             watch_submission(&http_client, &submission_url).await?;
 
             if args.open {
@@ -215,7 +231,7 @@ pub async fn send_submission(
         .file_name(submission.problem_file.clone())
         .mime_str("application/octet-stream")?;
 
-    let mainclass = submission.problem_file;
+    let mainclass = submission.problem_file.split('.').next().unwrap().to_string();
 
     let form = Form::new()
         .text("submit", "true")
@@ -298,8 +314,6 @@ async fn watch_submission(http_client: &HttpClient, submission_url: &str) -> Res
                         }
                         TestStatus::Failed => {
                             // would be nice to show the failed test case in the progress bar - not currently possible afaik
-                            pb.set_prefix("Failure: ");
-                            pb.abandon_with_message("😿 A test failed!");
                             break;
                         }
                         TestStatus::Running => {
@@ -314,21 +328,28 @@ async fn watch_submission(http_client: &HttpClient, submission_url: &str) -> Res
         if sub_status.is_finished() {
             println!("\n");
 
-            if ["Accepted", "Wrong answer"].contains(&submission_data.status.as_str()) {
-                println!(
+            if "Judge Error" == submission_data.status.as_str() {
+                println!("{}",
+                    format!("{} The unexpected happened, Kattis returned a Judge Error - you should probably contact them!",
+                    sub_status.emoji()
+                ).bright_magenta());
+            } else if matches!(sub_status, SubmissionStatus::Failed(_) | SubmissionStatus::Accepted) {
+                let message = format!(
                     "Final Status: {} {} - {} tests passed in - {}",
                     submission_data.status,
                     sub_status.emoji(),
                     submission_data.testcases,
                     submission_data.cpu
                 );
-            } else if "Judge Error" == submission_data.status.as_str() {
-                println!("{} The unexpected happened Kattis returned a Judge Error - you should probably contact them!", 
-                sub_status.emoji());
+                if "Accepted" == submission_data.status.as_str() {
+                    println!("{}", message.bright_green());
+                } else {
+                    println!("{}", message.bright_red());
+                }
             } else {
-                println!(
+                println!("{}", format!(
                     "The submission failed without being accepted or directly rejected - status: {} {}",
-                    submission_data.status, sub_status.emoji()
+                    submission_data.status, sub_status.emoji()).bright_magenta()
                 );
             }
             break;

@@ -14,10 +14,9 @@ use std::{
 
 use color_eyre::{
     eyre::{self, Context, ContextCompat},
+    owo_colors::OwoColorize,
     Report,
 };
-
-use colored::Colorize;
 
 pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
@@ -142,9 +141,14 @@ fn compile_problem(
     problem_path: &Path,
     problem_file_path: &Path,
 ) -> Result<(), Report> {
+    let executable_path = problem_file_path.with_extension("");
+    let compile_command = &compile_command.replace("{executable_path}", executable_path.to_str().unwrap());
+    
     let (compile_cmd, compile_args) = compile_command
         .split_once(' ')
         .ok_or_else(|| eyre::eyre!("🙀 Could not find arguments for compile command"))?;
+
+
 
     let compile_args = prepare_arguments(compile_args, problem_file_path, problem_path)?;
 
@@ -178,11 +182,18 @@ fn execute_problem(
     problem_file_path: &Path,
     test: (PathBuf, PathBuf),
 ) -> Result<(), Report> {
-    let (execute_cmd, execute_args) = execute_command
-        .split_once(' ')
-        .ok_or_else(|| eyre::eyre!("🙀 Could not find arguments for compile command"))?;
+    let executable_path = problem_file_path.with_extension("");
+    let execute_command = &execute_command.replace("{executable_path}", executable_path.to_str().unwrap());
 
-    let execute_args = prepare_arguments(execute_args, problem_file_path, problem_path)?;
+    let (execute_cmd, execute_args) = match execute_command.split_once(' ') {
+        Some((cmd, args)) => (cmd, Some(args)),
+        None => (execute_command.as_str(), None),
+    };
+    
+    let execute_args = match execute_args {
+        Some(args) => prepare_arguments(args, problem_file_path, problem_path)?,
+        None => Vec::new(),
+    };
 
     let (input_file_path, expected_output_file_path) = test;
     let input_file_name = input_file_path
@@ -219,8 +230,7 @@ fn execute_problem(
         eyre::bail!(format!(
             "🙀 Failed to execute problem: {}",
             problem_file_path.display()
-        )
-        .bright_red());
+        ));
     }
 
     // Compare the output of the program to the expected output
@@ -230,14 +240,15 @@ fn execute_problem(
         match app.args.verbose.log_level() {
             Some(log::Level::Error) | None => {
                 eyre::bail!(
-                    "{}",
-                    format!("❌ Test {input_file_name} failed!").bright_red()
+                    "{}{}",
+                    format!("❌ Test {input_file_name} failed!\n").bright_red(),
+                    format!("Output:\n{}", actual_output)
                 )
             }
             Some(_) => {
                 let stderr_output = String::from_utf8_lossy(&output.stderr);
                 let error_output = if !String::from_utf8_lossy(&output.stderr).is_empty() {
-                    format!("\nError output: {}\n", stderr_output)
+                    format!("\nError output:\n{}\n", stderr_output)
                 } else {
                     String::new()
                 };
@@ -245,7 +256,7 @@ fn execute_problem(
                     "{}{}",
                     format!("❌ Test {input_file_name} failed!\n").bright_red(),
                     format!(
-                        "Expected output: {}\nActual output: {}{}",
+                        "Expected output:\n{}\nActual output:\n{}{}",
                         expected_output, actual_output, error_output,
                     )
                     .bold()
