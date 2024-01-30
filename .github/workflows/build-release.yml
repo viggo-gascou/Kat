@@ -80,7 +80,7 @@ jobs:
           cp target/${{ matrix.target }}/release/${{ env.PROJECT_NAME }} ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/
           # copy README and LICENSE
           cp README.md ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/
-          cp LICENSE.md ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/
+          cp LICENSE ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/
           # copy completions --> bash, zsh fish
           cp 'target/${{ matrix.target }}/release/build/${{ env.PROJECT_NAME }}-'*/'out/${{ env.PROJECT_NAME }}.bash' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/completions/'
           cp 'target/${{ matrix.target }}/release/build/${{ env.PROJECT_NAME }}-'*/'out/_${{ env.PROJECT_NAME }}' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/completions/'

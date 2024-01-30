@@ -4,7 +4,7 @@ description = "Command line tool for interacting with the problem solving websit
 authors = ["Viggo Gascou"]
 readme = "README.md"
 repository = "https://github.com/viggo-gascou/kat"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 build = "build.rs"
 
