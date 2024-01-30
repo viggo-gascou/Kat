@@ -1,11 +1,19 @@
 name: Build and release kat
 
+env:
+  PROJECT_NAME: kat
+  PROJECT_DESC: "Command line tool for interacting with the problem solving website Kattis."
+  PROJECT_AUTH: "Viggo Gascou"
+
 on:
-  release:
-    types: [published]
+  pull_request:
+    types: [closed]
+    branches:
+      - main
 
 jobs:
   build:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
     name: Build for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
 
@@ -42,24 +50,48 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Rename binary with version
-        run: | 
-          mkdir release
-          mv target/${{ matrix.target }}/release/kat release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}
-
-      - name: Get sha256
+      - name: Initialise variables
+        id: vars
         run: |
-          if [[ "$(uname)" == "Darwin" ]]; then
-            shasum -a 256 release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }} > release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
-          else
-            sha256sum release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }} > release/kat-${{ github.event.release.tag_name }}-${{ matrix.os_name }}-${{ matrix.arch }}.sha256
-          fi
+          PKG_DIR='_package'
+          echo set-output name=PKG_DIR::${PKG_DIR}
+          echo ::set-output name=PKG_DIR::${PKG_DIR}
+          
+          VERSION=v$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
+          echo set-output name=VERSION::${VERSION}
+          echo ::set-output name=VERSION::${VERSION}
+          
+          PKG_BASENAME=${{ env.PROJECT_NAME }}-${VERSION}-${{ matrix.target }}
+          echo set-output name=PKG_BASENAME::${PKG_BASENAME}
+          echo ::set-output name=PKG_BASENAME::${PKG_BASENAME}
 
-      - name: Upload artifacts
-        uses: svenstaro/upload-release-action@v2
+          PKG_NAME=${PKG_BASENAME}.tar.gz
+          echo set-output name=PKG_NAME::${PKG_NAME}
+          echo ::set-output name=PKG_NAME::${PKG_NAME}
+
+      - name: Package
+        shell: bash
+        run: | 
+          # setup dirs
+          mkdir -p ${{ steps.vars.outputs.PKG_DIR }}
+          mkdir -p ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}
+          mkdir -p ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/completions
+          # copy binary
+          cp target/${{ matrix.target }}/release/${{ env.PROJECT_NAME }} ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/
+          # copy README and LICENSE
+          cp README.md ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/
+          cp LICENSE.md ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/
+          # copy completions --> bash, zsh fish
+          cp 'target/${{ matrix.target }}/release/build/${{ env.PROJECT_NAME }}-'*/'out/${{ env.PROJECT_NAME }}.bash' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/completions/'
+          cp 'target/${{ matrix.target }}/release/build/${{ env.PROJECT_NAME }}-'*/'out/_${{ env.PROJECT_NAME }}' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/completions/'
+          cp 'target/${{ matrix.target }}/release/build/${{ env.PROJECT_NAME }}-'*/'out/${{ env.PROJECT_NAME }}.fish' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}/completions/'
+          # compress package
+          tar czf '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_NAME }}' '${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_BASENAME }}'/*
+      
+      - name: Publish
+        uses: softprops/action-gh-release@v1
         with:
-            repo_token: ${{ secrets.GITHUB_TOKEN }}
-            file: release/kat*
-            tag: ${{ github.event.release.tag_name }}
-            overwrite: true
-            file_glob: true
+          files: |
+            ${{ steps.vars.outputs.PKG_DIR }}/${{ steps.vars.outputs.PKG_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
