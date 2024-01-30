@@ -50,22 +50,11 @@ brew install kat-rs
 
 ### From binaries
 
-To install **`kat`** using the binaries provided in the releases
-section of this repository. You can download the latest release by running the
-following command:
-
-```bash
-curl -s https://raw.githubusercontent.com/viggo-gascou/kat-rs/main/scripts/download-latest.sh | bash
-```
-
-Then adding the binary to a folder in your path. For example:
-
-```bash
-mv kat-$(uname)-$(uname -m) /usr/local/bin/kat
-```
-
-Older releases can always be found here
-[here](https://github.com/viggo-gascou/kat-rs/releases).
+The [release page](https://github.com/viggo-gascou/kat-rs/releases) includes
+precompiled binaries for Linux and macOS for every release. Along with the
+source code for the release. You can download the binary for your platform and
+place it somewhere in your `$PATH`. You can also download the source code and
+compile it yourself, see the [from source](#from-source) section for more info.
 
 ### From source
 
