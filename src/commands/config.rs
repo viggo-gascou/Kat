@@ -11,10 +11,9 @@ use std::{
 
 use color_eyre::{
     eyre::{Context, ContextCompat},
+    owo_colors::OwoColorize,
     Report,
 };
-
-use colored::Colorize;
 
 pub async fn config(app: &App, args: &Config) -> Result<(), Report> {
     match &args.subcommand {
@@ -37,13 +36,19 @@ fn get_config_location(app: &App) -> Result<(), Report> {
     let templates_location = config_dir.join("templates");
 
     println!(
-        "\nYour config directory is located at: {}",
-        config_dir.display()
+        "\nYour config directory is located at: {}\nMeaning that your config files are located at:",
+        config_dir.display().underline()
     );
-    println!("Meaning that your config files are located at:\n");
-    println!("\t- Config location: {}", config_location.display());
-    println!("\t- Kattisrc location: {}", kattisrc_location.display());
-    println!("\t- Templates location: {}", templates_location.display());
+
+    println!(
+        "
+    - Config location: {}
+    - Kattisrc location: {}
+    - Templates location: {}",
+        config_location.display().underline(),
+        kattisrc_location.display().underline(),
+        templates_location.display().underline()
+    );
 
     Ok(())
 }

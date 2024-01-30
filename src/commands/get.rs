@@ -15,7 +15,7 @@ use std::{
     io::Write,
 };
 
-use color_eyre::{eyre, eyre::Context, Report};
+use color_eyre::{eyre, eyre::Context, owo_colors::OwoColorize, Report};
 
 pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
     let problem = &args.problem;
@@ -38,8 +38,12 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
     let problem_dir = get_problem_dir(app, problem)?;
     if problem_dir.exists() {
         println!(
-            "👀 Looks like the problem {} has already been fetched!",
-            problem
+            "{}",
+            format!(
+                "👀 Looks like the problem {} has already been fetched!",
+                problem
+            )
+            .bright_yellow()
         );
         let overwrite = dialoguer::Confirm::new()
             .with_prompt("Do you want to get it again? (Careful this will overwrite the existing problem directory!)")
@@ -51,8 +55,10 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
             std::fs::create_dir(&problem_dir)
                 .wrap_err("🙀 Failed to create problem directory at this location")?;
         } else {
-            println!("{}", &problem_dir.display());
-            println!("👍 Ok, not fetching the problem {problem}!");
+            println!(
+                "{}",
+                "👍 Ok, not fetching the problem {problem}!".bright_green()
+            );
             return Ok(());
         }
     } else {
@@ -60,15 +66,26 @@ pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
             .wrap_err("🙀 Failed to create problem directory at this location")?;
     }
 
-    println!("📥 Fetching problem {} from {}...", problem, url);
+    println!(
+        "{}",
+        format!("📥 Fetching problem {} from {}...", problem, url).bright_blue()
+    );
 
     fetch_tests(app, problem, &url, &http_client).await?;
 
-    println!("📝 Creating template file for problem {}...", problem);
+    println!(
+        "{}",
+        format!("📝 Creating template file for problem {}...", problem).bright_blue()
+    );
 
     copy_template(app, &args.language, problem)?;
 
-    println!("👍 Successfully initialised the problem {}!", problem);
+    println!(
+        "{}",
+        format!("👍 Successfully initialised the problem {}!", problem)
+            .underline()
+            .bright_green()
+    );
 
     Ok(())
 }
@@ -104,7 +121,10 @@ async fn fetch_tests(
             Ok(())
         }
         reqwest::StatusCode::NOT_FOUND => {
-            println!("🤷 It seems that this problem does not have any test files!");
+            println!(
+                "{}",
+                "🤷 It seems that this problem does not have any test files!".bright_yellow()
+            );
             Ok(())
         }
         _ => {

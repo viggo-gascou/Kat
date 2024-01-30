@@ -10,12 +10,14 @@ use std::path::{Path, PathBuf};
 use color_eyre::{
     self,
     eyre::{Context, ContextCompat},
+    owo_colors::OwoColorize,
     Report,
 };
 
-use notify::{event::ModifyKind, EventKind, RecommendedWatcher, Watcher};
-
-use colored::Colorize;
+use notify::{
+    event::{DataChange::Content, ModifyKind},
+    EventKind, RecommendedWatcher, Watcher,
+};
 
 pub async fn watch(app: &App, args: &Watch) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
@@ -26,7 +28,7 @@ pub async fn watch(app: &App, args: &Watch) -> Result<(), Report> {
     println!(
         "{}",
         format!(
-            "👀 Watching the file {} for changes to test the problem {} ...\n",
+            "\n👀 Watching the file {} for changes to test the problem {} ...\n",
             &problem_file, problem_id
         )
         .bold()
@@ -71,6 +73,7 @@ async fn watch_problem(
     )? {
         print_pass_message(problem_id, problem_file);
     }
+    println!("{}", "=".repeat(25).bright_cyan()); // Separator line
 
     let (tx, rx) = std::sync::mpsc::channel();
 
@@ -86,7 +89,8 @@ async fn watch_problem(
         match event {
             Ok(event) => {
                 // Only run tests if the data/content of the file changed - not if if saved again without changes
-                if let EventKind::Modify(ModifyKind::Data(_)) = event.kind {
+                // NOTE: This does not seem to work - it runs the tests even if the file is saved without changes or using e.g., `touch`
+                if let EventKind::Modify(ModifyKind::Data(Content)) = event.kind {
                     println!(
                         "{}",
                         "👀 File changed, testing again ...".bold().bright_blue()
@@ -101,7 +105,7 @@ async fn watch_problem(
                     )? {
                         print_pass_message(problem_id, problem_file);
                     }
-                    println!("{}", "=".repeat(25).bright_purple()); // Separator line
+                    println!("{}", "=".repeat(25).bright_cyan()); // Separator line
                 }
             }
             Err(e) => println!("watch error: {:?}", e),

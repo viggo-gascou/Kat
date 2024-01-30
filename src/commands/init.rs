@@ -1,6 +1,7 @@
 use crate::{
     cli::Init,
-    utils::config::InternalConfig};
+    utils::{config::InternalConfig, HttpClient},
+};
 
 use std::{
     fs,
@@ -9,10 +10,11 @@ use std::{
 
 use color_eyre::{
     eyre::{self, Context},
+    owo_colors::OwoColorize,
     Report,
 };
 
-use reqwest::Client;
+use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect, Select};
 
 #[derive(serde::Deserialize, Debug, Clone)]
 struct GitHubFile {
@@ -35,10 +37,14 @@ pub async fn init(args: &Init) -> Result<(), Report> {
         download_sample_files(&config_dir, args).await?;
     } else {
         println!(
-            "👀 Looks like the config files already exists at {}!",
-            config_file_path.display()
+            "{}",
+            format!(
+                "👀 Looks like the config files already exists at {}!",
+                config_file_path.display()
+            )
+            .bright_yellow()
         );
-        let overwrite = dialoguer::Confirm::new()
+        let overwrite = Confirm::with_theme(&ColorfulTheme::default())
             .with_prompt("Do you want to overwrite them? (Careful this will overwrite any existing config files!)")
             .interact()
             .wrap_err("🙀 Failed to get user input")?;
@@ -46,14 +52,17 @@ pub async fn init(args: &Init) -> Result<(), Report> {
         if overwrite {
             download_sample_files(&config_dir, args).await?;
         } else {
-            println!("👍 Ok, not initialising any config files!");
+            println!(
+                "{}",
+                "👍 Ok, not initialising any config files!".bright_green()
+            );
             return Ok(());
         }
     }
 
-    println!(
-        "👍 Successfully initialised the config files at {}, make sure to download your kattisrc file and put it in the same directory!",
-        config_dir.display()
+    println!("{}",
+        format!("👍 Successfully initialised the config files at {}, make sure to download your kattisrc file and put it in the same directory!",
+        config_dir.display()).underline().bright_green()
     );
 
     Ok(())
@@ -62,17 +71,9 @@ pub async fn init(args: &Init) -> Result<(), Report> {
 async fn download_sample_files(config_dir: &Path, args: &Init) -> Result<(), Report> {
     let templates_url = "https://api.github.com/repos/viggo-gascou/kat-rs/contents/templates";
 
-    let client = Client::builder()
-        .cookie_store(true)
-        .user_agent(concat!(
-            env!("CARGO_PKG_REPOSITORY"),
-            "/",
-            env!("CARGO_PKG_VERSION")
-        ))
-        .build()
-        .wrap_err("🙀 Failed to create http client")?;
+    let http_client = HttpClient::new().unwrap();
 
-    let api_response = client.get(templates_url).send().await?;
+    let api_response = http_client.client.get(templates_url).send().await?;
 
     if api_response.status() != 200 {
         eyre::bail!("🙀 Failed to get contents of templates folder");
@@ -103,7 +104,7 @@ async fn download_sample_files(config_dir: &Path, args: &Init) -> Result<(), Rep
             }
         }
     } else {
-        let download_option = dialoguer::Select::new()
+        let download_option = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("What files do you want to download?")
             .items(&["All", "Just the sample config.toml", "Choose", "Cancel"])
             .default(0)
@@ -126,7 +127,7 @@ async fn download_sample_files(config_dir: &Path, args: &Init) -> Result<(), Rep
             2 => {
                 // If "Choose" is selected, let the user choose specific files
                 let file_names: Vec<&str> = files.iter().map(|file| file.name.as_str()).collect();
-                let selections = dialoguer::MultiSelect::new()
+                let selections = MultiSelect::with_theme(&ColorfulTheme::default())
                     .with_prompt("Select the template files you want to download (use space to select, enter to finish)")
                     .items(&file_names[..])
                     .interact()
@@ -141,14 +142,24 @@ async fn download_sample_files(config_dir: &Path, args: &Init) -> Result<(), Rep
             }
             3 => {
                 // If "Cancel" is selected, exit the program
-                println!("👍 Ok, cancelling the config initialisation of kat!");
+                println!(
+                    "{}",
+                    "👍 Ok, cancelling the config initialisation of kat!"
+                        .bold()
+                        .bright_yellow()
+                );
                 return Ok(());
             }
             _ => eyre::bail!("Invalid option selected"),
         }
     };
 
-    println!("📥 Fetching the specified sample config file(s) ...");
+    println!(
+        "{}",
+        "📥 Fetching the specified sample config file(s) ..."
+            .bold()
+            .bright_blue()
+    );
     for file in files_to_download {
         let file_path = if file.name.contains("template") {
             fs::create_dir_all(config_dir.join("templates"))

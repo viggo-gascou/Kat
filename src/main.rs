@@ -4,7 +4,7 @@ mod utils;
 use cli::parse_cli;
 use utils::AppConfig;
 
-use color_eyre::{Report, Result};
+use color_eyre::{owo_colors::OwoColorize, Report, Result};
 
 #[derive(Debug)]
 pub struct App {
@@ -45,10 +45,7 @@ async fn attempt_run(args: cli::Cli) -> crate::Result<()> {
         commands::init(args).await
     } else {
         let config = AppConfig::load()?;
-        let app = App {
-            args,
-            config,
-        };
+        let app = App { args, config };
 
         match &app.args.subcommand {
             Config(args) => commands::config(&app, args).await,
@@ -59,7 +56,6 @@ async fn attempt_run(args: cli::Cli) -> crate::Result<()> {
             Watch(args) => commands::watch(&app, args).await,
             // This should never happen, as we catch it earlier ^^
             Init(_) => unreachable!(),
-
         }
     }
 }
@@ -69,11 +65,11 @@ fn exit_on_err(res: crate::Result<()>, verbose: clap_verbosity_flag::Verbosity) 
         match verbose.log_level() {
             Some(log::Level::Error) => {
                 // If Error (default), we want to print a short error report
-                eprintln!("Error: {e}");
+                eprintln!("{}", format!("Error: {e}").bright_red());
             }
             Some(_) => {
                 // If the user has specified verbose output, we want to print a more detailed error report
-                eprintln!("Error: {e:?}");
+                eprintln!("{}", format!("Error: {e:?}").bright_red());
             }
             None => {
                 // If None the user has set quiet output, so no error report is printed

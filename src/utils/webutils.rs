@@ -30,6 +30,10 @@ pub fn get_submit_url_from_hostname(host_name: &str) -> String {
     format!("https://{}/submit", host_name)
 }
 
+pub fn get_sample_url_from_problem_url(problem_url: &str) -> String {
+    format!("{}/file/statement/samples.zip", problem_url)
+}
+
 pub async fn problem_exists(
     http_client: &HttpClient,
     problem: &str,
@@ -46,10 +50,6 @@ pub async fn problem_exists(
             eyre::bail!("🙀 Failed to get problem: {} - {}", problem, status)
         }
     }
-}
-
-pub fn get_sample_url_from_problem_url(problem_url: &str) -> String {
-    format!("{}/file/statement/samples.zip", problem_url)
 }
 
 pub fn check_change_hostname(app: &App, problem: &str, url_type: &str) -> Result<String, Report> {

@@ -11,10 +11,10 @@ use std::{
 use color_eyre::{
     eyre,
     eyre::{Context, ContextCompat},
+    owo_colors::OwoColorize,
     Report,
 };
 
-use colored::Colorize;
 use glob::glob;
 use regex::Regex;
 
@@ -92,7 +92,7 @@ pub fn copy_template(
             .wrap_err("🙀 Failed to get file name from path")?
             .to_str()
             .wrap_err("🙀 Failed to convert file name to string")?
-            .to_string();            
+            .to_string();
 
         // strip the subdomain from the problem id
         if problem.contains('.') {
