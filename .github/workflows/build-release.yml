@@ -16,7 +16,7 @@ on:
 
 jobs:
   build:
-    if: (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release'))  || github.event_name == 'workflow_dispatch'
+    if: (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')) || github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.action == 'published')
     name: Build for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
 
