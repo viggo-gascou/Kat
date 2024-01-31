@@ -14,9 +14,10 @@ use std::{
 
 use color_eyre::{
     eyre::{self, Context, ContextCompat},
-    owo_colors::OwoColorize,
     Report,
 };
+
+use colored::Colorize;
 
 pub async fn test(app: &App, args: &Test) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;
@@ -142,13 +143,12 @@ fn compile_problem(
     problem_file_path: &Path,
 ) -> Result<(), Report> {
     let executable_path = problem_file_path.with_extension("");
-    let compile_command = &compile_command.replace("{executable_path}", executable_path.to_str().unwrap());
-    
+    let compile_command =
+        &compile_command.replace("{executable_path}", executable_path.to_str().unwrap());
+
     let (compile_cmd, compile_args) = compile_command
         .split_once(' ')
         .ok_or_else(|| eyre::eyre!("🙀 Could not find arguments for compile command"))?;
-
-
 
     let compile_args = prepare_arguments(compile_args, problem_file_path, problem_path)?;
 
@@ -183,13 +183,14 @@ fn execute_problem(
     test: (PathBuf, PathBuf),
 ) -> Result<(), Report> {
     let executable_path = problem_file_path.with_extension("");
-    let execute_command = &execute_command.replace("{executable_path}", executable_path.to_str().unwrap());
+    let execute_command =
+        &execute_command.replace("{executable_path}", executable_path.to_str().unwrap());
 
     let (execute_cmd, execute_args) = match execute_command.split_once(' ') {
         Some((cmd, args)) => (cmd, Some(args)),
         None => (execute_command.as_str(), None),
     };
-    
+
     let execute_args = match execute_args {
         Some(args) => prepare_arguments(args, problem_file_path, problem_path)?,
         None => Vec::new(),

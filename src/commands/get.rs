@@ -15,7 +15,9 @@ use std::{
     io::Write,
 };
 
-use color_eyre::{eyre, eyre::Context, owo_colors::OwoColorize, Report};
+use color_eyre::{eyre, eyre::Context, Report};
+
+use colored::Colorize;
 
 pub async fn get(app: &App, args: &Get) -> Result<(), Report> {
     let problem = &args.problem;

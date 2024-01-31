@@ -10,7 +10,6 @@ use std::path::{Path, PathBuf};
 use color_eyre::{
     self,
     eyre::{Context, ContextCompat},
-    owo_colors::OwoColorize,
     Report,
 };
 
@@ -18,6 +17,8 @@ use notify::{
     event::{DataChange::Content, ModifyKind},
     EventKind, RecommendedWatcher, Watcher,
 };
+
+use colored::Colorize;
 
 pub async fn watch(app: &App, args: &Watch) -> Result<(), Report> {
     let (problem_path, problem_id) = find_problem_dir(app, &args.path)?;

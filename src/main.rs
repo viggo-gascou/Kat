@@ -4,7 +4,9 @@ mod utils;
 use cli::parse_cli;
 use utils::AppConfig;
 
-use color_eyre::{owo_colors::OwoColorize, Report, Result};
+use color_eyre::{Report, Result};
+
+use colored::Colorize;
 
 #[derive(Debug)]
 pub struct App {
