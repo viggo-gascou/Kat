@@ -10,11 +10,12 @@ use std::{
 
 use color_eyre::{
     eyre::{self, Context},
-    owo_colors::OwoColorize,
     Report,
 };
 
 use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect, Select};
+
+use colored::Colorize;
 
 #[derive(serde::Deserialize, Debug, Clone)]
 struct GitHubFile {

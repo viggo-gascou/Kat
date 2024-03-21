@@ -13,7 +13,6 @@ use std::{collections::HashSet, fs, path::PathBuf};
 
 use color_eyre::{
     eyre::{self, Context, ContextCompat},
-    owo_colors::OwoColorize,
     Report,
 };
 
@@ -21,6 +20,8 @@ use indicatif::{ProgressBar, ProgressStyle};
 use regex::Regex;
 use reqwest::multipart::{Form, Part};
 use scraper::{Html, Selector};
+
+use colored::Colorize;
 
 #[derive(Debug)]
 pub struct Submission<'a> {
@@ -231,7 +232,12 @@ pub async fn send_submission(
         .file_name(submission.problem_file.clone())
         .mime_str("application/octet-stream")?;
 
-    let mainclass = submission.problem_file.split('.').next().unwrap().to_string();
+    let mainclass = submission
+        .problem_file
+        .split('.')
+        .next()
+        .unwrap()
+        .to_string();
 
     let form = Form::new()
         .text("submit", "true")
@@ -328,30 +334,59 @@ async fn watch_submission(http_client: &HttpClient, submission_url: &str) -> Res
         if sub_status.is_finished() {
             println!("\n");
 
-            if "Judge Error" == submission_data.status.as_str() {
-                println!("{}",
+            let string_status = submission_data.status.as_str();
+            let message = match string_status {
+                "Judge Error" => {
                     format!("{} The unexpected happened, Kattis returned a Judge Error - you should probably contact them!",
-                    sub_status.emoji()
-                ).bright_magenta());
-            } else if matches!(sub_status, SubmissionStatus::Failed(_) | SubmissionStatus::Accepted) {
-                let message = format!(
-                    "Final Status: {} {} - {} tests passed in - {}",
-                    submission_data.status,
-                    sub_status.emoji(),
-                    submission_data.testcases,
-                    submission_data.cpu
-                );
-                if "Accepted" == submission_data.status.as_str() {
-                    println!("{}", message.bright_green());
-                } else {
-                    println!("{}", message.bright_red());
+                        sub_status.emoji()).bright_magenta()
                 }
-            } else {
-                println!("{}", format!(
-                    "The submission failed without being accepted or directly rejected - status: {} {}",
-                    submission_data.status, sub_status.emoji()).bright_magenta()
-                );
-            }
+                "Accepted" => {
+                    format!(
+                        "Final Status: {} {} - {} tests passed in - {}",
+                        submission_data.status,
+                        sub_status.emoji(),
+                        submission_data.testcases,
+                        submission_data.cpu
+                    )
+                    .bright_green()
+                }
+                "Wrong Answer" => {
+                    format!(
+                        "Final Status: {} {} - {} tests passed in - {}",
+                        submission_data.status,
+                        sub_status.emoji(),
+                        submission_data.testcases,
+                        submission_data.cpu
+                    )
+                    .bright_red()
+                }
+                "Run Time Error" => {
+                    format!("{} Oh no! Your solution failed with a Run Time Error - you should probably check your code!", 
+                    sub_status.emoji()).bright_red()
+                }
+                "Time Limit Exceeded" => {
+                    format!("{} Oh no! Your solution took too longer than {} to run - is there an infinite loop in your code?", 
+                    sub_status.emoji(), submission_data.cpu.replace("&gt;", "")).bright_red()
+                }
+                "Compile Error" => {
+                    format!("{} Oh no! Your solution failed to compile - did it compile locally?", 
+                    sub_status.emoji()).bright_red()
+                }
+                "Memory Limit Exceeded" => {
+                    format!("{} Oh no! Your solution used too much memory - do you have an unnecessarily large data structure?", 
+                    sub_status.emoji()).bright_red()
+                }
+                "Output Limit Exceeded" => {
+                    format!("{} Oh no! Your solution printed too much output - did you forget to remove debug statements?", 
+                    sub_status.emoji()).bright_red()
+                }
+                _ => {
+                    format!("{} The submission finished with an unknown status: {} {}",
+                        sub_status.emoji(), submission_data.status, sub_status.emoji()).bright_magenta()
+                }
+            };
+            println!("{}", message);
+
             break;
         }
         // wait 0.25 seconds before checking the submission status again to avoid spamming the server
@@ -495,7 +530,7 @@ fn configure_progress_bar(
             sub_status.emoji(),
         ));
     } else {
-        pb.set_prefix("Testing: ");
+        pb.set_prefix("Testing ");
     }
 
     pb.set_length(num_tests);
