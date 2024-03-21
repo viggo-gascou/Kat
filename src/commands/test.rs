@@ -9,7 +9,7 @@ use std::{
     fs::{self, File},
     io,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 use color_eyre::{
@@ -154,6 +154,8 @@ fn compile_problem(
 
     let output = Command::new(compile_cmd)
         .args(compile_args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .output()
         .map_err(|e| match e.kind() {
             io::ErrorKind::NotFound => {
@@ -208,7 +210,9 @@ fn execute_problem(
     let start_time = std::time::Instant::now();
     let output = Command::new(execute_cmd)
         .args(&execute_args)
-        .stdin(input_file)
+        .stdin(Stdio::from(input_file))
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .output()
         .map_err(|e| match e.kind() {
             io::ErrorKind::NotFound => {
