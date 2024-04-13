@@ -61,20 +61,22 @@ pub fn check_change_hostname(app: &App, problem: &str, url_type: &str) -> Result
     if problem.contains('.') {
         let problem_hostname = problem.split('.').next().unwrap();
 
-        println!(
-            "\n👀 It looks like problem {} is hosted on {}.kattis.com instead of {}.",
-            problem, problem_hostname, hostname
-        );
-        let change_hostname = dialoguer::Confirm::new()
-            .with_prompt(format!(
-                "Do you want to change the hostname to {}.kattis.com?",
-                problem_hostname
-            ))
-            .interact()
-            .unwrap();
+        if hostname != format!("{}.kattis.com", problem_hostname) {
+            println!(
+                "\n👀 It looks like problem {} is hosted on {}.kattis.com instead of {}.",
+                problem, problem_hostname, hostname
+            );
+            let change_hostname = dialoguer::Confirm::new()
+                .with_prompt(format!(
+                    "Do you want to change the hostname to {}.kattis.com?",
+                    problem_hostname
+                ))
+                .interact()
+                .unwrap();
 
-        if change_hostname {
-            hostname = format!("{}.kattis.com", problem_hostname);
+            if change_hostname {
+                hostname = format!("{}.kattis.com", problem_hostname);
+            }
         }
     }
     if url_type == "get" {

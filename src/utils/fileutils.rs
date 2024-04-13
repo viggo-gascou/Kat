@@ -47,7 +47,9 @@ pub fn copy_template(
             if config.languages.contains_key(lang) {
                 lang
             } else {
-                eyre::bail!("🙀 Invalid language: {}", lang);
+                log::warn!(
+                    "{}",format!("🙀 Language: {lang} does not seem to be defined in the config! Skipping template setup.").bright_yellow());
+                return Ok(());
             }
         }
         None => &config.default.language,
@@ -232,13 +234,17 @@ pub fn find_test_files(
 
 pub fn find_problem_files(
     problem_path: &Path,
-    problem_id: &String,
+    mut problem_id: &str,
     extensions: &[String],
 ) -> Vec<PathBuf> {
     let problem_path = problem_path
         .to_str()
         .expect("🙀 Failed to convert problem path to string")
         .to_string();
+    // strip the subdomain from the problem id
+    if problem_id.contains('.') {
+        problem_id = problem_id.split('.').nth(1).unwrap();
+    }
     let mut matching_files = Vec::new();
     for extension in extensions {
         let pattern = format!("{problem_path}/*{problem_id}*.{extension}");
