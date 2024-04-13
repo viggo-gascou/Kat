@@ -107,8 +107,6 @@ async fn fetch_tests(
         reqwest::StatusCode::OK => {
             let test_dir = get_test_dir(app, problem)?;
 
-            fs::create_dir_all(&test_dir).wrap_err("🙀 Failed to create tests directory")?;
-
             while let Some(chunk) = response.chunk().await? {
                 tmpfile
                     .write_all(&chunk)
@@ -117,8 +115,16 @@ async fn fetch_tests(
 
             let mut zip =
                 zip::ZipArchive::new(tmpfile).wrap_err("🙀 Failed to create zip archive")?;
-            zip.extract(&test_dir)
-                .wrap_err("🙀 Failed to extract samples.zip")?;
+            if zip.is_empty() {
+                println!(
+                    "{}",
+                    "🤷 It seems that the tests zip is empty!".bright_yellow()
+                );
+            } else {
+                fs::create_dir_all(&test_dir).wrap_err("🙀 Failed to create tests directory")?;
+                zip.extract(&test_dir)
+                    .wrap_err("🙀 Failed to extract samples.zip")?;
+            }
 
             Ok(())
         }
