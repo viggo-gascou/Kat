@@ -17,6 +17,8 @@ use notify::{
     event::{DataChange::Content, ModifyKind},
     EventKind, RecommendedWatcher, Watcher,
 };
+use std::time::Duration;
+use tokio::time::Instant;
 
 use colored::Colorize;
 
@@ -82,6 +84,8 @@ async fn watch_problem(
 
     watcher.watch(problem_file_path, notify::RecursiveMode::NonRecursive)?;
 
+    let mut last_run = Instant::now() - Duration::from_secs(1); // Initialize to a time in the past
+
     loop {
         let event = rx.recv().wrap_err(format!(
             "🙀 Something went wrong with watching the file at: {}",
@@ -89,24 +93,30 @@ async fn watch_problem(
         ))?;
         match event {
             Ok(event) => {
-                // Only run tests if the data/content of the file changed - not if if saved again without changes
-                // NOTE: This does not seem to work - it runs the tests even if the file is saved without changes or using e.g., `touch`
-                if let EventKind::Modify(ModifyKind::Data(Content)) = event.kind {
-                    println!(
-                        "{}",
-                        "👀 File changed, testing again ...".bold().bright_blue()
-                    );
-                    if test_problem(
-                        app,
-                        problem_id,
-                        problem_path,
-                        problem_file_path,
-                        tests.clone(),
-                        language,
-                    )? {
-                        print_pass_message(problem_id, problem_file);
+                let now = Instant::now();
+                // Only run tests again if the last run was more than 500ms ago - to avoid running tests if e.g.,
+                // a formatter changed the contents of the file after saving
+                if now.duration_since(last_run) > Duration::from_millis(500) {
+                    // Only run tests if the data/content of the file changed - not if if saved again without changes
+                    // NOTE: This does not seem to work - it runs the tests even if the file is saved without changes or using e.g., `touch`
+                    if let EventKind::Modify(ModifyKind::Data(Content)) = event.kind {
+                        println!(
+                            "{}",
+                            "👀 File changed, testing again ...".bold().bright_blue()
+                        );
+                        if test_problem(
+                            app,
+                            problem_id,
+                            problem_path,
+                            problem_file_path,
+                            tests.clone(),
+                            language,
+                        )? {
+                            print_pass_message(problem_id, problem_file);
+                        }
+                        println!("{}", "=".repeat(25).bright_cyan()); // Separator line
+                        last_run = now;
                     }
-                    println!("{}", "=".repeat(25).bright_cyan()); // Separator line
                 }
             }
             Err(e) => println!("watch error: {:?}", e),
