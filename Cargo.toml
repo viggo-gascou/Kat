@@ -4,7 +4,7 @@ description = "Command line tool for interacting with the problem solving websit
 authors = ["Viggo Gascou"]
 readme = "README.md"
 repository = "https://github.com/viggo-gascou/kat"
-version = "0.1.1"
+version = "0.1.4"
 edition = "2021"
 build = "build.rs"
 
@@ -16,27 +16,27 @@ clap-verbosity-flag = "2.1.1"
 clap_complete = "4.4.6"
 color-eyre = { version = "0.6.2" }
 colored = "2.1.0"
-config = { version = "0.13.4", features = ["toml", "ini"] }
+config = { version = "0.14.0", features = ["toml", "ini"] }
 dialoguer = "0.11.0"
 dirs = "5.0.1"
-env_logger = "0.10.1"
+env_logger = "0.11.5"
 glob = "0.3.1"
 indicatif = "0.17.7"
 log = "0.4.20"
 notify = "6.1.1"
 regex = "1.10.2"
-reqwest = { version = "0.11.23", features = ["cookies", "multipart", "blocking", "json"] }
-scraper = "0.18.1"
+reqwest = { version = "0.12.7", features = ["cookies", "multipart", "blocking", "json"] }
+scraper = "0.20.0"
 secrecy = { version = "0.8.0", features = ["serde"] }
 serde = { version = "1.0.193", features = ["derive"] }
 shellexpand = "3.1.0"
 shlex = "1.2.0"
 tempfile = "3.8.1"
-termion = "3.0.0"
+termion = "4.0.2"
 tokio = { version = "1.35.1", features = ["full"] }
 toml = "0.8.8"
-webbrowser = "0.8.12"
-zip = "0.6.6"
+webbrowser = "1.0.1"
+zip = "2.2.0"
 
 [build-dependencies]
 clap = { version = "4.4.11", features = ["derive"] }
