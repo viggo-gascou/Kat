@@ -53,6 +53,7 @@ impl InternalConfig {
             let mut file = OpenOptions::new()
                 .write(true)
                 .create(true)
+                .truncate(true)
                 .open(internal_config_path)?;
             file.write_all(toml.as_bytes())?;
 
@@ -89,6 +90,7 @@ impl InternalConfig {
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(internal_config_path)?;
         file.write_all(toml.as_bytes())?;
 
@@ -105,8 +107,11 @@ pub struct KattisrcUser {
 #[derive(Debug, Deserialize)]
 pub struct KattisrcKattis {
     pub hostname: String,
+    #[allow(dead_code)]
     pub loginurl: String,
+    #[allow(dead_code)]
     pub submissionurl: String,
+    #[allow(dead_code)]
     pub submissionsurl: String,
 }
 
