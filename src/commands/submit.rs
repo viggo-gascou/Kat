@@ -33,6 +33,7 @@ pub struct Submission<'a> {
 
 #[derive(Debug)]
 pub struct SubmissionData {
+    #[allow(dead_code)]
     pub submission_id: String,
     pub plagiarism: String,
     pub time: String,
@@ -295,14 +296,18 @@ pub async fn send_submission(
 async fn watch_submission(http_client: &HttpClient, submission_url: &str) -> Result<(), Report> {
     let (term_width, _) = termion::terminal_size().unwrap();
     let mut completed_tests: HashSet<String> = HashSet::new();
-    let pb = ProgressBar::new(0);
+    let mut pb = ProgressBar::new(0);
+    let mut previous_status = String::new();
 
     loop {
         let submission_data = parse_submission_data(http_client, submission_url).await?;
         let sub_status = SubmissionStatus::from_str(&submission_data.status);
         let num_tests = submission_data.tests.len() as u64;
 
-        let pb = configure_progress_bar(&pb, &submission_data, num_tests, term_width);
+        if previous_status != submission_data.status {
+            pb = configure_progress_bar(&pb, &submission_data, num_tests, term_width);
+            previous_status = submission_data.status.clone();
+        }
 
         if pb.position() < num_tests as u64 {
             for test in &submission_data.tests {
